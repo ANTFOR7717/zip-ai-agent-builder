@@ -1,0 +1,756 @@
+{
+  "config_pages": [
+    {
+      "title": "Connections",
+      "description": "",
+      "items": [
+        {
+          "kind": "config_var",
+          "config_var_key": "http_connection"
+        }
+      ]
+    },
+    {
+      "title": "Setup",
+      "description": "",
+      "items": []
+    }
+  ],
+  "config_vars": {
+    "http_connection": {
+      "key": "http_connection",
+      "title": "Http connection",
+      "description": null,
+      "required": true,
+      "kind": "connection",
+      "connector": {
+        "key": "http"
+      }
+    }
+  },
+  "exported_at": "2026-02-13T00:14:40.564Z",
+  "flow_config_pages": [],
+  "flow_config_vars": {},
+  "is_concurrent_job_limit_enabled": true,
+  "is_long_running": false,
+  "name": "Duplicate supplier check agent",
+  "steps_data": [
+    {
+      "key": "ai_1",
+      "display_name": "no parent no duplicate",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "zip_data"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "Summary banner\n\nGreen: \n- Title: No duplicate vendor found\n- no subtitle\n\nHeader: \"Next steps\"\n\nRecommendation section\nTitle: Good to go\nDescription:\nWe didn’t find any vendors in your system that match \"${steps.zip_1.vendor.name}\", and no related parent companies were identified. You can proceed with creating this new vendor.\n\n"
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          },
+          "model": {
+            "control": "picklist",
+            "value": "auto"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_2",
+      "display_name": "get duplicate vendors",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Perform vendor matching for the vendor name: ${steps.ai_3.response.name}\n\nand output their name and  guid. if there are more then 4 limit the output to just 4\n\nhowever if this guid matches any of the above, remove that one from the results and do not mention it in the output: ${steps.trigger.request.vendor.id}\n\n\n"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "zip_data"
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_3",
+      "display_name": "normalize name",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "tools": {
+            "control": "multipicklist",
+            "value": []
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "AI Step — Normalize & Resolve Parent/Owner (Procurement-Relevant)\n\nGoal:\nNormalize the vendor name and, only when relevant to procurement, return the actual legal entity that would be the contracting/billing vendor.  and cases where the input is an acronym (e.g., “EY”) or has missing/extra spaces (e.g., “Homedepot” vs “Home Depot”).\n\nInputs:\nvendor_name: ${steps.zip_1.vendor.name}\ncontact_email (optional): ${steps.zip_2.contacts[0].email}\n\nProcess\n\nNormalize & Generate Candidate Variants\n- Lowercase the vendor name.\n- Trim leading/trailing spaces and collapse internal whitespace to single spaces.\n- Remove punctuation and business suffixes (inc, llc, ltd, corp, co, company, etc.).\n- Jurisdiction-aware suffixes: recognize and remove: cc (ZA/Namibia/Botswana), pty ltd (ZA/AU), bv (NL), gmbh (DE/AT/CH), srl/sl (IT/ES), sp z o.o. (PL), sa/sas (FR/ES/RO), plc (UK/IE), oy (FI), ab (SE), as (NO/EE), kft (HU), sro (CZ/SK), a.s. (CZ/SK), etc. If present, set `jurisdiction_hint` accordingly.\n- Acronym handling: If input matches a known vendor acronym/alias (e.g., ey → ernst & young, pwc → pricewaterhousecoopers), add the expanded variant to the candidate set.\n- Whitespace variants: If normalized value becomes a single merged token plausibly representing a compound name (e.g., homedepot), add split-space candidates (e.g., home depot).\n- If email is provided, extract domain and eTLD+1 (e.g., atlassian.com) and add the domain-owner name (if obvious from domain) to the candidate set.\n\n"
+          },
+          "model": {
+            "control": "picklist",
+            "value": "auto"
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "name"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "vendor name after applying rules"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "reason"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "reason behind decision"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_5",
+      "display_name": "no parent but duplicate",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "Summary banner\n\nYellow (if vendors are similar):\nRed (if vendors are exact match): \n- Title: \"Potential duplicate vendor found\" if single or if multiple \"Potential duplicate vendors found\"\n- Subtext: Below are the similar vendors found to \"${steps.zip_1.vendor.name}\"\n\nHeader: \"Similar vendors\"\n\nFor each VISIBLE candidate list the following data if present:\n\n# Header: \"<Vendor name>\" Include citation linking to the vendor \n- Legal name\n- Email domain\n- Alternate name (DBA)\n- Created: \n- Country\n- Subsidiaries this vendor works with:\n\nHeader: \"Next steps\"\n\nRecommendation section\nTitle: Double check this vendor\nDescription: If one of the vendors listed matches the vendor you’re trying to create, update your request to use the existing vendor. Output here is limited to just the four most similar vendors.\n=========\n\nbelow are the similar vendors found\n${steps.ai_2.response}\n"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "zip_data"
+            ]
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          },
+          "model": {
+            "control": "picklist",
+            "value": "auto"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_6",
+      "display_name": "decide if duplicate or parent",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "review this vendor_name: ${steps.zip_1.vendor.name}\n\ndecide if any of the below similar vendors are close enough for a careless human to pick the wrong one.\n${steps.ai_2.response}\n\ndecide if any of the similar vendors is parent.\n-also refer to the parent vendor name in vendor record if available: ${steps.zip_2.parent_vendor.name}, if any potential vendor matches, return True.\n"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "nameMatch"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "return true if names are similar for ex google inc and google llc otherwise false. if there is only a single name return false"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "reason"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "reason behind decision"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "parentMatch"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "return true if one of the below is a parent of the given vendor. for ex google and alphabet. otherwise return false\n-also refer to the parent vendor name in vendor record if available: ${steps.zip_2.parent_vendor.name}, if any potential vendor matches, return True."
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "parentMatch logic"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "describe how you decide if parentMatch"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "web_search_preview",
+              "zip_data"
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_7",
+      "display_name": "no duplicate but parent",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Summary banner\n\nYellow: \n- Title: Parent vendor match found \n- No subtitle\n\nHeader \"Parent company\"\n\n# Header: \"<Vendor name>\" Include citation linking to the vendor \n- Legal name\n- Email domain\n- Alternate name (DBA)\n- Created: \n- Country\n- Subsidiaries this vendor works with:\n\nHeader: \"Next steps\"\n\nRecommendation section\nTitle: Good to go\nDescription: We didn’t find any vendors in your system that match \"${steps.zip_1.vendor.name}\", however we did identify a related parent company. Please review the parent company details before proceeding with creating this vendor.\n\nparent company info:\n${steps.ai_4.response.parentInfo}\n\n"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "zip_data"
+            ]
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_8",
+      "display_name": "parent and duplicate",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Summary banner\n\nYellow (if vendors are similar):\nRed (if vendors are exact match): \n- Title: \"Potential duplicate vendor found\" if single or if multiple \"Potential duplicate vendors found\"\n- Subtext: Below are the similar vendors found to \"${steps.zip_1.vendor.name}\"\n\n\nHeader \"Parent company\"\n\n# Header: \"<Vendor name>\" (Include citation linking to the vendor)\n- Legal name\n- Email domain\n- Alternate name (DBA)\n- Created: \n- Country\n- Subsidiaries this vendor works with:\n\nHeader: \"Similar vendors\" (only render this if similar vendors is different from parent company)\n\nFor each VISIBLE candidate list the following data if present:\n\n# Header: \"<Vendor name>\" (Include citation linking to the vendor)\n- Legal name\n- Email domain\n- Alternate name (DBA)\n- Created: \n- Country\n- Subsidiaries this vendor works with:\n\nHeader: \"Next steps\"\n\n(Recommendation section)\n\nTitle: Double check this vendor\nDescription: We found vendor records in your system that match \"${steps.zip_1.vendor.name}\", and we also identified a related parent company. Please review the matches before proceeding with creating or updating this vendor.\n\n=========\n\nbelow are the similar vendors found\n${steps.ai_2.response}\n\nparent company info:\n${steps.ai_4.response.parentInfo}"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "zip_data"
+            ]
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_1",
+      "display_name": "if duplicate",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.ai_6.response.nameMatch"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "equals"
+                  },
+                  "right_value": {
+                    "control": "boolean",
+                    "value": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_3",
+      "display_name": "If parent but no duplicate",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.ai_6.response.parentMatch"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "equals"
+                  },
+                  "right_value": {
+                    "control": "boolean",
+                    "value": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_4",
+      "display_name": "If parent and duplicate",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.ai_6.response.parentMatch"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "equals"
+                  },
+                  "right_value": {
+                    "control": "boolean",
+                    "value": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "http_1",
+      "display_name": "Send HTTP request",
+      "connector_key": "http",
+      "action_key": "$http_client",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "method": {
+            "control": "picklist",
+            "value": "POST"
+          },
+          "url": {
+            "control": "text",
+            "value": "/comments"
+          },
+          "request_body": {
+            "control": "text",
+            "value": "{\n  \"data\": {\n    \"text\": \"@${steps.zip_1.requester.email}  One or more potential duplicate vendors for ${steps.zip_1.vendor.name} have been identified. Please review.\",\n    \"user_id\": \"${steps.zip_1.creator.id}\",\n    \"external_display_name\": \"ZIP Bot\",\n    \"purchase_requisition_id\": \"${steps.trigger.request.id}\"\n  }\n}"
+          },
+          "content_type": {
+            "control": "picklist",
+            "value": "application/json"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_connection"
+    },
+    {
+      "key": "http_2",
+      "display_name": "Send HTTP request",
+      "connector_key": "http",
+      "action_key": "$http_client",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "url": {
+            "control": "text",
+            "value": "/comments"
+          },
+          "method": {
+            "control": "picklist",
+            "value": "POST"
+          },
+          "content_type": {
+            "control": "picklist",
+            "value": "application/json"
+          },
+          "request_body": {
+            "control": "text",
+            "value": "{\n  \"data\": {\n    \"text\": \"@${steps.zip_1.requester.email}  One or more potential duplicate and parent vendors for ${steps.zip_1.vendor.name} have been identified. Please review.\",\n    \"user_id\": \"${steps.zip_1.creator.id}\",\n    \"external_display_name\": \"ZIP Bot\",\n    \"purchase_requisition_id\": \"${steps.trigger.request.id}\"\n  }\n}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_connection"
+    },
+    {
+      "key": "return_1",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_1.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_2",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_5.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_3",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_7.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_4",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_8.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "trigger",
+      "display_name": "Approval assist",
+      "connector_key": "ai",
+      "action_key": "approval_assist",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_1",
+      "display_name": "Get request",
+      "connector_key": "zip",
+      "action_key": "get_request",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "request_id": {
+            "control": "text",
+            "value": "${steps.trigger.request.id}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    }
+  ],
+  "trigger_kind": "APPROVAL_ASSIST",
+  "type": "task_template",
+  "version": 1,
+  "workflow": {
+    "trigger": {
+      "key": "trigger",
+      "branches": null
+    },
+    "steps": [
+      {
+        "key": "zip_1",
+        "branches": null
+      },
+      {
+        "key": "ai_3",
+        "branches": null
+      },
+      {
+        "key": "ai_2",
+        "branches": null
+      },
+      {
+        "key": "ai_6",
+        "branches": null
+      },
+      {
+        "key": "condition_1",
+        "branches": [
+          {
+            "key": "default",
+            "label": "False",
+            "steps": [
+              {
+                "key": "condition_3",
+                "branches": [
+                  {
+                    "key": "default",
+                    "label": "False",
+                    "steps": [
+                      {
+                        "key": "ai_1",
+                        "branches": null
+                      },
+                      {
+                        "key": "return_1",
+                        "branches": null
+                      }
+                    ]
+                  },
+                  {
+                    "key": "true",
+                    "label": "True",
+                    "steps": [
+                      {
+                        "key": "ai_7",
+                        "branches": null
+                      },
+                      {
+                        "key": "return_3",
+                        "branches": null
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "true",
+            "label": "True",
+            "steps": [
+              {
+                "key": "condition_4",
+                "branches": [
+                  {
+                    "key": "default",
+                    "label": "False",
+                    "steps": [
+                      {
+                        "key": "http_1",
+                        "branches": null
+                      },
+                      {
+                        "key": "ai_5",
+                        "branches": null
+                      },
+                      {
+                        "key": "return_2",
+                        "branches": null
+                      }
+                    ]
+                  },
+                  {
+                    "key": "true",
+                    "label": "True",
+                    "steps": [
+                      {
+                        "key": "http_2",
+                        "branches": null
+                      },
+                      {
+                        "key": "ai_8",
+                        "branches": null
+                      },
+                      {
+                        "key": "return_4",
+                        "branches": null
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

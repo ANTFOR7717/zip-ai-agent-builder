@@ -1,0 +1,1337 @@
+{
+  "config_pages": [],
+  "config_vars": {},
+  "exported_at": "2026-02-23T16:16:31.583Z",
+  "flow_config_pages": [],
+  "flow_config_vars": {},
+  "is_concurrent_job_limit_enabled": true,
+  "is_long_running": false,
+  "name": "[Amplitude] Contract Analysis Agent",
+  "steps_data": [
+    {
+      "key": "ai_1",
+      "display_name": "Document Discovery and Classification",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "**Objective:** Act as a Document Classification Agent.\n**Context:** Review ALL documents attached to Request ID `${steps.zip_1.id}`first and most important and then Vendor ID `${steps.zip_2.id}` For comparison the current request.\n**Instructions:**\n1. Identify each document by analyzing content (not filename alone).\n2. Classify document type: MSA, Order Form, SOW, SOC 2, DPA, Security Questionnaire, Other.\n3. Extract document date, vendor name, and key parties.\n4. Provide brief content summary.\n5. Assign confidence level: High, Medium, Low.\n**Structured Output Schema:**\n`{ \"documents\": [{ \"documentName\": \"string\", \"documentType\": \"MSA|Order Form|SOW|SOC 2|DPA|Other\", \"documentDate\": \"YYYY-MM-DD or null\", \"vendor\": \"string\", \"summary\": \"string\", \"confidenceLevel\": \"High|Medium|Low\" }], \"msaFound\": \"boolean\", \"msaAge\": \"number or null\", \"previousOrderFound\": \"boolean\", \"soc2Found\": \"boolean\" }`"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document",
+              "zip_data"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "documentsOnVendor"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Array of document objects related to ${steps.zip_2.id}"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "msaFound"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Boolean indicating if MSA was found"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "msaAge"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Age of MSA in years or null"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "previousOrderFound"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Boolean indicating if previous order form was found"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "soc2Found"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Boolean indicating if SOC 2 was found"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "documentsOnRequest"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Array of document objects related to ${steps.zip_1.id}"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_2",
+      "display_name": "MSA Analysis",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "**Objective:** Act as a Senior Contract Analyst reviewing MSA terms if available.\n**Context:** If MSA is found in ${steps.ai_1.response}, analyze the MSA document from ${steps.ai_1.response}. Otherwise, note that no MSA was found.\n**Configurable Inputs:**\n- MSA Age Threshold: 2 years\n- Price Protection Criteria: No price increase >5% annually OR CPI-linked OR locked pricing for contract term\n**Instructions:**\n1. If MSA is found, extract MSA date and calculate age in years.\n2. Flag if MSA age exceeds threshold.\n3. Extract key terms: auto-renewal, price protection, payment terms, term length, termination clause, liability cap.\n4. List all certifications mentioned with dates.\n5. Assess negotiation status and risk level.\n6. If no MSA, provide a note that MSA analysis is not available.\n**Structured Output Schema:**\n`{ \"msaDate\": \"YYYY-MM-DD or null\", \"msaAgeYears\": \"number or null\", \"msaAgeFlag\": \"boolean or null\", \"autoRenewal\": \"Yes|No|Unclear or null\", \"priceProtection\": \"Yes|No|Unclear or null\", \"priceProtectionDetails\": \"string or null\", \"paymentTerms\": \"string or null\", \"termLength\": \"string or null\", \"terminationClause\": \"string or null\", \"liabilityCap\": \"string or null\", \"certifications\": [\"array\"] or null, \"certificationDates\": \"string or null\", \"negotiationStatus\": \"Negotiated|Unnegotiated|Unknown or null\", \"riskLevel\": \"High|Medium|Low or null\", \"msaAvailable\": \"boolean\" }`"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "msaDate"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "MSA date"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "msaAgeYears"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Age in years"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "msaAgeFlag"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Flag if age exceeds threshold"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "autoRenewal"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Auto-renewal status"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "priceProtection"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Price protection status"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "priceProtectionDetails"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Details of price protection"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "paymentTerms"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Payment terms"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "termLength"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Term length"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "terminationClause"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Termination clause"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "liabilityCap"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Liability cap"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "certifications"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "List of certifications"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "certificationDates"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Certification dates"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "negotiationStatus"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Negotiation status"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "riskLevel"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Risk level"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_3",
+      "display_name": "Extract Previous Order Terms",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "**Objective:** Act as a Contract Data Extraction Agent for previous order terms if available.\n**Context:** If previous order is found in ${steps.ai_1.response}, extract terms from the previous order form identified in ${steps.ai_1.response}. Otherwise, note that no previous order was found.\n**Instructions:**\n1. If previous order is found, extract total price, line items, and quantities.\n2. Extract per-unit pricing for each line item.\n3. Extract payment terms and billing frequency.\n4. Extract term dates (start/end).\n5. Note any special pricing or discounts.\n6. If no previous order, provide a note that historical comparison is not available.\n**Structured Output Schema:**\n`{ \"totalPrice\": \"number or null\", \"lineItems\": [{ \"name\": \"string\", \"quantity\": \"number\", \"unitPrice\": \"number\", \"totalPrice\": \"number\" }] or null, \"perUnitPrices\": [{ \"item\": \"string\", \"price\": \"number\" }] or null, \"paymentTerms\": \"string or null\", \"termStartDate\": \"YYYY-MM-DD or null\", \"termEndDate\": \"YYYY-MM-DD or null\", \"specialPricing\": \"string or null\", \"discounts\": \"string or null\", \"previousOrderAvailable\": \"boolean\" }`"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "totalPrice"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Total price"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "lineItems"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Line items array"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "array"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "perUnitPrices"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Per unit prices"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "array"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "paymentTerms"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Payment terms"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "termStartDate"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Start date"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "termEndDate"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "End date"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "specialPricing"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Special pricing"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "discounts"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Discounts"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_4",
+      "display_name": "Extract Current Order Terms",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "**Objective:** Act as a Contract Data Extraction Agent.\n**Context:** Extract terms from the current order form in Request ID `${steps.zip_1.id}`.\n**Instructions:**\n1. Extract total price, line items, and quantities.\n2. Extract per-unit pricing for each line item.\n3. Extract payment terms and billing frequency.\n4. Extract term dates (start/end).\n5. Note any special pricing or discounts.\n**Structured Output Schema:**\n`{ \"totalPrice\": \"number\", \"lineItems\": [{ \"name\": \"string\", \"quantity\": \"number\", \"unitPrice\": \"number\", \"totalPrice\": \"number\" }], \"perUnitPrices\": [{ \"item\": \"string\", \"price\": \"number\" }], \"paymentTerms\": \"string\", \"termStartDate\": \"YYYY-MM-DD\", \"termEndDate\": \"YYYY-MM-DD\", \"specialPricing\": \"string\", \"discounts\": \"string\" }`"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "totalPrice"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Total price"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "lineItems"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Line items array"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "perUnitPrices"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Per unit prices"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "paymentTerms"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Payment terms"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "termStartDate"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Start date"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "termEndDate"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "End date"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "specialPricing"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Special pricing"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "discounts"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Discounts"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_5",
+      "display_name": "Savings Calculator",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "**Objective:** Act as a Financial Analyst calculating savings metrics if historical data is available.\n**Context:** If previous order terms are available from ${steps.ai_3.response}, compare with current order terms ${steps.ai_4.response}. Otherwise, note that no savings calculation is possible due to missing historical data.\n**Instructions:**\n1. If previous data is available, calculate absolute price difference.\n2. Calculate percentage change.\n3. Determine per-unit price changes.\n4. Calculate annualized impact.\n5. Project multi-year savings/costs.\n6. Account for volume changes.\n7. Document all calculation assumptions.\n8. If no previous data, provide a note that savings analysis is not available.\n**Structured Output Schema:**\n`{ \"previousTotalPrice\": \"number or null\", \"currentTotalPrice\": \"number\", \"absoluteDifference\": \"number or null\", \"percentageChange\": \"number or null\", \"savingsDirection\": \"Savings|Cost Increase|No Change or null\", \"perUnitPricePrevious\": \"number or null\", \"perUnitPriceCurrent\": \"number or null\", \"perUnitChange\": \"number or null\", \"annualizedImpact\": \"number or null\", \"multiYearProjection\": \"number or null\", \"volumeChangeFactor\": \"string or null\", \"calculationNotes\": \"string\", \"savingsCaptureReady\": \"boolean or null\" }`"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": []
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "previousTotalPrice"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Previous total price"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "currentTotalPrice"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Current total price"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "absoluteDifference"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Absolute difference"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "percentageChange"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Percentage change"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "savingsDirection"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Savings direction"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "perUnitPricePrevious"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Previous per unit price"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "perUnitPriceCurrent"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Current per unit price"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "perUnitChange"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Per unit change"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "annualizedImpact"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Annualized impact"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "multiYearProjection"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Multi-year projection"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "number"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "volumeChangeFactor"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Volume change factor"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "calculationNotes"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Calculation notes"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "savingsCaptureReady"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Savings capture ready"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_6",
+      "display_name": "Security Assessment",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "**Objective:** Act as a Security Analyst conducting vendor security assessment.\n**Context:** Assess security posture for vendor from `${steps.zip_2.id}`.\n**Configurable Input:** Required Certifications: SOC 2 Type II (if handling customer data)\n**Instructions:**\n1. Web search for recent security breaches (past 12 months).\n2. If SOC 2 report found in `${steps.ai_1.response}`, analyze for findings.\n3. List ALL certifications found with dates and expiration status.\n4. Compare found certifications against required list.\n5. Flag missing or expired critical certifications.\n6. Identify any context-based requirements (e.g., healthcare data = HIPAA required).\n**Structured Output Schema:**\n`{ \"recentBreaches\": [{ \"date\": \"YYYY-MM-DD\", \"description\": \"string\", \"severity\": \"Critical|High|Medium|Low\" }], \"certificationsFound\": [{ \"name\": \"string\", \"date\": \"YYYY-MM-DD\", \"expirationDate\": \"YYYY-MM-DD\", \"status\": \"Valid|Expired|Unknown\" }], \"requiredCertsPresent\": \"boolean\", \"missingCertifications\": [\"array\"], \"expiredCertifications\": [\"array\"], \"soc2Findings\": \"string\", \"securityRiskLevel\": \"High|Medium|Low\", \"securityTeamFlag\": \"boolean\", \"flagReason\": \"string\" }`"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "web_search_preview",
+              "document"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "recentBreaches"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Recent breaches array"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "certificationsFound"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Certifications found"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "requiredCertsPresent"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Required certs present"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "missingCertifications"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Missing certifications"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "expiredCertifications"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Expired certifications"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "soc2Findings"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "SOC 2 findings"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "securityRiskLevel"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Security risk level"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "securityTeamFlag"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Security team flag"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "flagReason"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Flag reason"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_7",
+      "display_name": "Generate Comprehensive Report",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "**Objective:** Act as a Senior Procurement Analyst generating a comprehensive contract review report.\n**Context:** Synthesize data from Savings Calculator ${steps.ai_5.response}, Security Assessment ${steps.ai_6.response}, and conditionally include MSA Analysis ${steps.ai_2.response} and previous order terms ${steps.ai_3.response} if available.\n\n**Report Structure:**\n\n**1. Executive Summary:**\n- Summary banner with color indicator based on overall risk assessment\n  - GREEN: Low risk - proceed with standard approval\n  - YELLOW: Medium risk - review recommended items before approval\n  - RED: High risk - requires negotiation or security review before approval\n- One-sentence overview of primary risk or opportunity\n- Total contract value and savings amount if applicable\n- Key action items requiring immediate attention\n\n**2. Risk Scorecard Table:**\nGenerate a 4-column table with the following structure:\n- Column 1: Status Icon - Use emoji indicators: green_circle for Low risk, yellow_circle for Medium risk, red_circle for High risk\n- Column 2: Category - MSA Status, Pricing, Terms, Security\n- Column 3: Summary - Brief 1-2 sentence assessment\n- Column 4: Action Required - Yes/No with specific next step if Yes\n\n**3. Contract Comparison Table:**\nGenerate a detailed comparison table with the following rows (include only if historical data is available):\n- Total Contract Value: Previous vs Current vs Change percentage\n- Per-Unit Pricing: Previous vs Current vs Change percentage\n- License/Seat Count: Previous vs Current vs Change\n- Auto-Renewal Clause: Previous status vs Current status vs Risk indicator\n- Price Protection: Previous status vs Current status vs Risk indicator\n- Payment Terms: Previous vs Current vs Change\n- Term Length: Previous vs Current vs Change\n\n**4. Savings Analysis Section:**\n- Include if historical data is available; otherwise, note that savings analysis is not possible\n\n**5. Security Assessment Section:**\n- Certification status table: Certification Name, Issue Date, Expiration Date, Status\n- Required certifications comparison: Required vs Present vs Gap Analysis\n- Recent security incidents or breaches with dates and severity\n- SOC 2 findings summary if report was analyzed\n- Security team flag status with reason if applicable\n- Data handling and compliance considerations\n\n**6. Detailed Findings - Collapsible Sections:**\n**6a. MSA Terms Review:**\n- Include if MSA is available; otherwise, note that MSA analysis is missing\n\n**6b. Pricing Analysis:**\n- Line item breakdown with quantities and unit prices\n- Discount structure and special pricing terms\n- Overage rates and true-up provisions\n- Price escalation clauses or CPI adjustments\n\n**6c. Security Deep Dive:**\n- Detailed certification analysis\n- Security questionnaire findings if available\n- Data residency and processing locations\n- Sub-processor list if mentioned\n\n**6d. Document Summary:**\n- List of all documents analyzed with classification confidence\n- Document age and relevance assessment\n- Missing documents identified\n\n**7. Recommendations Section:**\n- Priority 1 items requiring immediate action before approval\n- Priority 2 items recommended for negotiation\n- Priority 3 items for future contract improvements\n- Specific language suggestions for problematic clauses\n- Security team escalation requirements if applicable\n- Timeline recommendations for renegotiation if MSA is aged\n\n**8. Appendices:**\n- Full structured data from analysis nodes\n- Calculation methodology details\n- Reference to company policies applied\n\n**Constraints:**\n- Use professional procurement and legal terminology\n- No conversational filler or pleasantries\n- Ensure all markdown tables render correctly\n- Use emoji icons that display universally\n- All dollar amounts formatted with currency symbol and commas\n- Percentages formatted to two decimal places\n- Dates formatted as YYYY-MM-DD\n- Include collapsible sections using HTML details/summary tags for lengthy content\n- Clearly note any missing data (MSA, historical orders) and how it impacts the analysis"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": []
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_1",
+      "display_name": "Return Full Report",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_7.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "trigger",
+      "display_name": "Contract Analysis Trigger",
+      "connector_key": "ai",
+      "action_key": "approval_assist",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_1",
+      "display_name": "Get Request",
+      "connector_key": "zip",
+      "action_key": "get_request",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "request_id": {
+            "control": "text",
+            "value": "${steps.trigger.request.id}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_2",
+      "display_name": "Get Vendor",
+      "connector_key": "zip",
+      "action_key": "get_vendor",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "vendor_id": {
+            "control": "text",
+            "value": "${steps.zip_1.vendor.id}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    }
+  ],
+  "trigger_kind": "APPROVAL_ASSIST",
+  "type": "task_template",
+  "version": 1,
+  "workflow": {
+    "trigger": {
+      "key": "trigger",
+      "branches": null
+    },
+    "steps": [
+      {
+        "key": "zip_1",
+        "branches": null
+      },
+      {
+        "key": "zip_2",
+        "branches": null
+      },
+      {
+        "key": "ai_1",
+        "branches": null
+      },
+      {
+        "key": "ai_2",
+        "branches": null
+      },
+      {
+        "key": "ai_3",
+        "branches": null
+      },
+      {
+        "key": "ai_4",
+        "branches": null
+      },
+      {
+        "key": "ai_5",
+        "branches": null
+      },
+      {
+        "key": "ai_6",
+        "branches": null
+      },
+      {
+        "key": "ai_7",
+        "branches": null
+      },
+      {
+        "key": "return_1",
+        "branches": null
+      }
+    ]
+  }
+}

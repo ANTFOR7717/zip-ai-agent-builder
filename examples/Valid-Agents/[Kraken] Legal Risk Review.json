@@ -1,0 +1,381 @@
+{
+  "type": "task_template",
+  "name": "Legal Risk Review Agent",
+  "version": 1,
+  "trigger_kind": "APPROVAL_ASSIST",
+  "is_concurrent_job_limit_enabled": true,
+  "is_long_running": false,
+  "config_vars": {},
+  "config_pages": [],
+  "steps_data": [
+    {
+      "key": "zip_1",
+      "display_name": "Get Request Data",
+      "connector_key": "zip",
+      "action_key": "get_request",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "request_id": {
+            "control": "ref",
+            "value": "steps.trigger.request.id"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_1",
+      "display_name": "Identify Legal Documents",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "You are a Legal Risk Review Agent. Your first task is to identify if there are any relevant legal agreements attached to this request that require review.\n\n**Context**:\nRequest ID: ${steps.zip_1.id}\nRequest Name: ${steps.zip_1.name}\n\n**Instructions**:\n1. Scan the attached documents for this request.\n2. Look for contracts such as \"Master Services Agreement\" (MSA), \"Terms of Service\" (ToS), \"Data Processing Agreement\" (DPA), \"Statement of Work\" (SOW) with legal terms, or similar binding agreements.\n3. Ignore non-legal documents like \"Receipts\", \"Invoices\" (unless they contain T&Cs), or \"Screenshots\".\n\n**Output**:\nReturn a boolean indicating if legal documents were found, and a list of their names."
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document",
+              "zip_data"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "has_legal_docs"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "True if at least one legal agreement (MSA, ToS, etc.) is found."
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "document_names"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "List of the identified legal document filenames."
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_1",
+      "display_name": "Check for Documents",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.ai_1.response.has_legal_docs"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "equals"
+                  },
+                  "right_value": {
+                    "control": "boolean",
+                    "value": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_no_docs",
+      "display_name": "Report Missing Documents",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Generate a summary banner for the Legal Risk Review.\n\n**Status**: Yellow/Warning\n**Title**: Missing Legal Documents\n**Message**: \"The Legal Risk Review Agent could not find any attached legal agreements (MSA, ToS, etc.) to analyze. Please upload the relevant contracts and re-run the approval workflow.\"\n\nOutput as Markdown."
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_section_1",
+      "display_name": "Section 1: Legal Review",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "You are a specialized Legal Risk Review Agent. Perform **Section 1: Legal Review** on the identified documents: ${steps.ai_1.response.document_names}.\n\n**Instructions**:\n1. **Banner + Summary**: Provide a high-level overview of the agreement’s legal risk posture. Assign a consolidated Risk Score (Low, Medium, High).\n2. **Agreement Scope + Context**: Briefly describe the contract type, parties involved, term, and business purpose.\n3. **Key Strengths**: Highlight provisions that reduce risk (e.g., balanced liability, clear IP ownership).\n\n**Formatting**:\n- Use Markdown headers.\n- Include citations/links to the specific clauses in the document where information is found.\n- Be concise but thorough."
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_section_2",
+      "display_name": "Section 2: Risk Matrix",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "You are a specialized Legal Risk Review Agent. Perform **Section 2: Risk Matrix & Decision Logic** on the documents.\n\n**Instructions**:\n1. **Clause-Level Risk Classification (1–5)**:\n   - Score each of the following critical clauses on a scale of 1 (Low Risk/Compliant) to 5 (Critical Risk):\n     - Auto-renewal\n     - Indemnification\n     - Liability Caps\n     - Confidentiality\n     - Governing Law\n     - DPA/DORA Applicability\n   - **Matrix Logic**:\n     - 1-2: Auto-approve (Fully compliant/Minor deviation)\n     - 3: Negotiable risk (Auto-approve w/ note)\n     - 4: High risk (Escalate)\n     - 5: Critical risk (Escalate)\n2. **Playbook Alignment**: Assess alignment with standard corporate legal playbooks (assume standard favorable terms).\n3. **Escalation Guidance**: Clearly state which issues require legal escalation vs. those resolvable by standard fallback language.\n\n**Formatting**:\n- Use a Markdown table for the Risk Matrix (Clause | Score | Finding | Action).\n- Use Markdown for the narrative sections.\n- **MUST** include citations to the specific clauses."
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_redlines",
+      "display_name": "Generate Redlines",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Based on the risk analysis in Section 2, generate **Redline Suggestions** for any clause scored 4 or 5 (High/Critical Risk).\n\n**Instructions**:\n- For each high-risk clause, provide the original text (with citation) and the suggested redline/replacement text to bring it into compliance.\n- If no high-risk clauses are found, state \"No critical redlines required.\"\n- Note: \"*Automatic Word document creation is not currently available. Please apply these redlines manually.*\""
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_compile",
+      "display_name": "Compile Final Report",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Compile the final **Legal Risk Review Report** from the previous steps.\n\n**Content Sources**:\n- **Section 1 (Legal Review)**: ${steps.ai_section_1.response}\n- **Section 2 (Risk Matrix)**: ${steps.ai_section_2.response}\n- **Redlines**: ${steps.ai_redlines.response}\n\n**Instructions**:\n- Combine these sections into a single, beautifully formatted Markdown report.\n- Ensure the **Risk Banner** (from Section 1) is at the very top.\n- Maintain all citations.\n- Ensure clear separation between sections."
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_final",
+      "display_name": "Return Final Report",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "ref",
+            "value": "steps.ai_compile.response"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_missing",
+      "display_name": "Return Missing Docs Msg",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "ref",
+            "value": "steps.ai_no_docs.response"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "trigger",
+      "display_name": "Trigger",
+      "connector_key": "ai",
+      "action_key": "approval_assist",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    }
+  ],
+  "workflow": {
+    "trigger": {
+      "key": "trigger",
+      "branches": null
+    },
+    "steps": [
+      {
+        "key": "zip_1",
+        "branches": null
+      },
+      {
+        "key": "ai_1",
+        "branches": null
+      },
+      {
+        "key": "condition_1",
+        "branches": [
+          {
+            "key": "true",
+            "label": "True",
+            "steps": [
+              {
+                "key": "ai_section_1",
+                "branches": null
+              },
+              {
+                "key": "ai_section_2",
+                "branches": null
+              },
+              {
+                "key": "ai_redlines",
+                "branches": null
+              },
+              {
+                "key": "ai_compile",
+                "branches": null
+              },
+              {
+                "key": "return_final",
+                "branches": null
+              }
+            ]
+          },
+          {
+            "key": "default",
+            "label": "False",
+            "steps": [
+              {
+                "key": "ai_no_docs",
+                "branches": null
+              },
+              {
+                "key": "return_missing",
+                "branches": null
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

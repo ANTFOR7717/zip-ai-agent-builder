@@ -1,0 +1,591 @@
+{
+  "config_pages": [],
+  "config_vars": {},
+  "exported_at": "2026-02-13T00:14:18.921Z",
+  "flow_config_pages": [],
+  "flow_config_vars": {},
+  "is_concurrent_job_limit_enabled": true,
+  "is_long_running": false,
+  "name": "Adverse media research agent",
+  "steps_data": [
+    {
+      "key": "ai_1",
+      "display_name": "Research and Filtering",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "array_schema": {
+            "control": "boolean",
+            "value": true
+          },
+          "output_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "title"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "The title of the adverse media event"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "description": {
+                    "control": "text",
+                    "value": "A description of the adverse media event"
+                  },
+                  "key": {
+                    "control": "text",
+                    "value": "description"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "date"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "The date of the adverse media event. Use format YYYY-MM-DD"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "You are a procurement risk analyst conducting adverse media research on vendors. Your task is to search for and compile relevant news articles about potential risks. It is possible that the vendor could be a single person, in that case still conduct research on them.\n\n**Vendor Information:**\nvendor name: ${steps.ai_6.response.full_vendor_name}\n-If the vendor is multi-entity company, search for the specific branch name, eg. DO NOT mix the results for Deloitte India vs Deloitte US-India Offices (USI) .\n\n**Research Instructions:**\n1. Search for news articles from the past 12 months about this vendor\n2. Focus on these risk categories:\n   - Cybersecurity incidents and data breaches\n   - Legal challenges and regulatory issues\n   - Financial risks and business performance\n   - Reputation issues and public relations challenges\n-do not include any articles written by the vendor, for example if the vendor is google and google writes a blog post do not include that.\n\n**Source Quality Standards:**\n- Prioritize reputable news outlets (major newspapers, industry publications, established tech media)\n- Include press releases and official statements\n- Avoid social media posts, forums, and unverified sources\n- When in doubt about source credibility, err on the side of inclusion for analysis\n\n**Output Format:**\nFor each relevant article found, provide:\n- **Title:** [Article headline]\n- **Source:** [Publication name]\n- **Date:** [Publication date]\n- **URL:** ${steps.ai_6.response.url}\n- **Risk Category:** [Cybersecurity/Legal/Financial/Reputation]\n- **Summary:** [2-3 sentence summary of key points]\n- **Severity Indicator:** [High/Medium/Low based on potential business impact]\n\n**Important:**\n- If you find multiple articles covering the same event, note them all but indicate they're related\n- if a Wikipedia link is found, the system 'funnels' the search further to find the original news source. Do not use Wikipedia as original source.\n- If no adverse media is found, clearly state this\n- Focus on factual reporting rather than opinion pieces\n- Search using variations of the company name to ensure comprehensive coverage"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "web_search_preview"
+            ]
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          },
+          "data_sources": {
+            "control": "array",
+            "value": []
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "raw"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_2",
+      "display_name": "Generate report",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Objective: Act as a concise analyst summarizing research findings. Analyze the provided research findings. \n\nContext: Use the web analysis output to inform the markdown: ${steps.ai_3.response}\n\nOutput markdown:\n\nSection 1:\nRead the vendor identification from ${steps.ai_6.response.name}\nBased on the response, determine if we were able to find an exact match with vendor ${steps.zip_1.vendor.name}. \n\nIf an exact match was found, output: \"Researched vendor: [Vendor name]\"\n\nSection 2:\n\nHeading: \"Scorecard\"\nTable: \nColumn 1: No header\n- Green icon: Use for minimal issues, positive developments, or stable/well-managed status. (Use sparingly if significant issues are present).\n- Yellow: Use for significant potential risks, ongoing concerns, or mixed - negative/neutral status.\n- Red: Use for critical issues, high severity findings, or predominantly negative status.\nColumn 2 \"Key area\": The name of the key area. Make it bolded.\nColumn 3 \"Summary\": Write a single sentence summarizing the overall status.\n\nHeader: “Next steps” \nRecommendation section\nTitle: One line risk summary\nDescription: 1-3 sentence risk summary\n\nHeading: \"Detailed results\"\nCollapsible rows:\nEach section:\n- List the main findings, events, or examples identified in the input research as bullet points\n- At the end of the bullet, put the date of the article and article publisher in parenthesis\n- Add a citation at the end of the bullet\n- Do not include duplicate articles"
+          },
+          "data_sources": {
+            "control": "array",
+            "value": []
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_3",
+      "display_name": "Analysis",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "data_sources": {
+            "control": "array",
+            "value": []
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "You are a procurement risk analyst reviewing adverse media research results. Your task is to analyze the findings and provide structured risk categorization.\n\n**web Research Results:**\n${steps.ai_1.response}\n\n**Analysis Instructions:**\n\n1. **Deduplication:**\n   - Identify articles covering the same events/incidents\n   - Group related coverage together\n   - For each unique event, select the most comprehensive or authoritative source as primary\n\n2. **Risk Categorization:**\n   Analyze each unique event and categorize into:\n   - **Cybersecurity:** Data breaches, security incidents, cyber attacks\n   - **Legal:** Lawsuits, regulatory actions, compliance issues\n   - **Financial:** Financial distress, earnings issues, accounting problems\n   - **Reputation:** PR crises, executive scandals, customer complaints\n\n3. **Impact Assessment:**\n   For each event, assess:\n   - **Recency:** How recent is this event?\n   - **Severity:** What's the potential business impact?\n   - **Resolution Status:** Has this been resolved or is it ongoing?\n   - **Credibility:** How reliable is the source reporting?\n\n**If no risks found in a category, clearly state \"No significant [category] risks identified in the research period.\"**"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": []
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_4",
+      "display_name": "No match found",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "Summary banner\nRed \nTitle: No online results found\nSubtitle:  ${steps.ai_6.response[\"Reason for no match found\"]}.\n"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_6",
+      "display_name": "Vendor identification",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Task:\nUsing the vendor name ${steps.zip_1.vendor.name}, as well as the purchased goods ${steps.zip_1.price_detail.line_items}\n\nInstructions\n1. Normalize the Vendor Name\n -Detect the language of the vendor name. If it is not in English, Search for it's English name\n-Keep both the original name and translated/romanized form for reference.\n2. Web search for the vendor.\n3.  If multiple companies share similar names, use industry, product type, keywords in the item descriptions, purchased goods/services or other available context to choose the correct one. If cannot filter , explain the reason.\n4. Prefer the official company homepage or main corporate website over distributor or third-party listings.\n5. The vendor could be a company or an individual — identify accordingly.\n\nRules:\n- If multiple matching available, keep these matching vendors and try filter the most possible one. If cannot filter, explain the reason.\n- If the vendor is multi-entity company, keep the specific branch name, eg. Deloitte India vs Deloitte US-India Offices (USI) . \n- The name must be searchable/reference-able. If it's a smaller company with a lesser known name, then normalize it less.\n"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "web_search_preview"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "matchFound"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Return True if a web search is able to return the vendor"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "name"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Output vendor name"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "url"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Output vendor website url"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "Reason for no match found"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "If matchFound is False, explain in detail why cannot identify the vendor. If multiple vendors, list two or three most possible match."
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "full_vendor_name"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "This is the un-normalized name not reduced and better for web searches."
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_7",
+      "display_name": "Request for vendor name",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "Summary banner\nRed \nTitle: Please fill in vendor name\nSubtitle: write 1-2 sentences of reasoning explaining that the vendor name is null, no vendor on this request to run an adverse media search against. Add a vendor to the request and run again for analysis."
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_1",
+      "display_name": "If condition",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.ai_6.response.matchFound"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "equals"
+                  },
+                  "right_value": {
+                    "control": "boolean",
+                    "value": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_2",
+      "display_name": "If vendor name not null",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.zip_2.name"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "not_equals"
+                  },
+                  "right_value": {
+                    "control": "null",
+                    "value": null
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_1",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "ref",
+            "value": "steps.ai_2.response"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_2",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_4.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_3",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_7.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "trigger",
+      "display_name": "Approval node task",
+      "connector_key": "ai",
+      "action_key": "approval_assist",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_1",
+      "display_name": "Get request",
+      "connector_key": "zip",
+      "action_key": "get_request",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "request_id": {
+            "control": "ref",
+            "value": "steps.trigger.request.id"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_2",
+      "display_name": "Get vendor",
+      "connector_key": "zip",
+      "action_key": "get_vendor",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "vendor_id": {
+            "control": "text",
+            "value": "${steps.zip_1.vendor.id}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    }
+  ],
+  "trigger_kind": "APPROVAL_ASSIST",
+  "type": "task_template",
+  "version": 1,
+  "workflow": {
+    "trigger": {
+      "key": "trigger",
+      "branches": null
+    },
+    "steps": [
+      {
+        "key": "zip_1",
+        "branches": null
+      },
+      {
+        "key": "zip_2",
+        "branches": null
+      },
+      {
+        "key": "condition_2",
+        "branches": [
+          {
+            "key": "default",
+            "label": "False",
+            "steps": [
+              {
+                "key": "ai_7",
+                "branches": null
+              },
+              {
+                "key": "return_3",
+                "branches": null
+              }
+            ]
+          },
+          {
+            "key": "true",
+            "label": "True",
+            "steps": [
+              {
+                "key": "ai_6",
+                "branches": null
+              },
+              {
+                "key": "condition_1",
+                "branches": [
+                  {
+                    "key": "default",
+                    "label": "False",
+                    "steps": [
+                      {
+                        "key": "ai_4",
+                        "branches": null
+                      },
+                      {
+                        "key": "return_2",
+                        "branches": null
+                      }
+                    ]
+                  },
+                  {
+                    "key": "true",
+                    "label": "True",
+                    "steps": [
+                      {
+                        "key": "ai_1",
+                        "branches": null
+                      },
+                      {
+                        "key": "ai_3",
+                        "branches": null
+                      },
+                      {
+                        "key": "ai_2",
+                        "branches": null
+                      },
+                      {
+                        "key": "return_1",
+                        "branches": null
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

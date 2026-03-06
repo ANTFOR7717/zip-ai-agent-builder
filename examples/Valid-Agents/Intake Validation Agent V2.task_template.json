@@ -1,0 +1,1245 @@
+{
+  "config_pages": [
+    {
+      "title": "Connections",
+      "description": "",
+      "items": [
+        {
+          "kind": "config_var",
+          "config_var_key": "http_client_connection"
+        }
+      ]
+    },
+    {
+      "title": "Setup",
+      "description": "",
+      "items": []
+    }
+  ],
+  "config_vars": {
+    "http_client_connection": {
+      "key": "http_client_connection",
+      "title": "HTTP client connection",
+      "description": "",
+      "required": true,
+      "kind": "connection",
+      "connector": {
+        "key": "http"
+      }
+    }
+  },
+  "exported_at": "2026-02-13T00:13:46.771Z",
+  "flow_config_pages": [],
+  "flow_config_vars": {},
+  "is_concurrent_job_limit_enabled": true,
+  "is_long_running": false,
+  "name": "Intake Validation Agent V2",
+  "steps_data": [
+    {
+      "key": "ai_1",
+      "display_name": "output markdown",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Context:\ndocument GL code below:\n ${steps.ai_6.response}\n\nLine items in request below: \n${steps.zip_1.price_detail.line_items}\n\nLine items in document below:\n${steps.ai_12.response.lineItems}\n\nFetch api data and the the only the most relevant documents on request ${steps.zip_1.id}. If there are multiple versions of the same document only select the most relevant one. Then perform data validation on this request and suggest correct values. Include fields: \nCategory\nSubcategory\nPayment terms\nPayment frequency\nStart date\nEnd date\nTotal price\nSubsidiary\n\nFor all fields besides the category, subcategory and total price fields, try to look for them on the PO change order namespace, and if you can't find them there, then use the request namespace. \n\nOutput:\n\"summary banner\"\n# Header:  \"Mismatch found\" or \"No mismatches found\" .\nBanner summary: if at least one mismatched field: \"Some fields in this request don't match the uploaded documents. Review and update them as needed.\" only if all fields match: \"The request details align with the uploaded documents\"\nDo not include anything else other than the banner summary and the table below\n\n\n\nHeader \"Fields validation\"\n\"These fields can be updated in one click using the document's suggested values\"\n\ncolumn 1: (no header)\nmatch icon: green, yellow, or red. (Green is no update is proposed, red if update is proposed, yellow if original value is not found and an update is proposed)\n\ncolumn 2: \"Field\"\n\ncolumn 3: \"Request\"\n\ncolumn 4: \"Suggested based on document\"\n\nOutput a row corresponding to each result from data validation. For \"Field\" column, pick from names \n(Category, Subcategory, Payment terms, Payment frequency, Start date, End date, total price, Subsidiary, Location)\nNot all names in that list needs a row. DO NOT output a row if you don't see a corresponding data validation entry for it even if that row is one of the original fields that data validation is done on.\nAdhere to the following guidelines:\n1. If no update is proposed for a field, output a green icon in column 1 and output the matching results in column 3 and 4. Output a red icon in column 1 if the original value exists and differs from the proposed value. Output a yellow icon in column 1 if the original value doesn't exist and there's a proposed value.\n2. for each row, create a citation from  its ent_ai_result and place them at the end of the last column. Do this regardless of if the row matches or not.\n3. For original value, if it's empty just output \"Not Found\"\n4. For suggested value, if it's empty just output \"Not Found\". And if an existing value exists but suggested value is empty treat it as suggesting to empty the field and output red icon in column 1. \n5. If the field is \"estimated_total_price_cents\", when displaying it, display the currency symbol then the total amount in dollars.\n6. If there's data source information from the data validation output, render the data source text under the \"Request\" column within the <subtext text=\"{data source information}\" tier=\"red\"> markdown tag\n\nAfter rendering this table, render a Data Validation Component only if there are mismatches found. \n\n collapsible Header: \"Justification\" brief reasoning for selection based on document \n-category\n-subcategory\n-gl account \n-Subsidiary\ninstructions\n-limit to 4 bullet points\n-limit each bulletpoint to one sentence\n\nHeader \"Fields validation\"\n\ncolumn 1: (no header)\nmatch icon: green, yellow, or red.\n\ncolumn 1: \"Field\"\n-Location (billing address)\n-PII Risk or data sharing\n-currency\n\ncolumn 2: \"Request\"\n\ncolumn 3: \"Document\"\n\nHeader \"Line items field validation\"\n\ncolumn 1: (no header)\nmatch icon: green, yellow, or red.\n\ncolumn 1: \"Line\"\n\n- \"Item\": check all line items in request and all line items in document to generate a non-repeated list. \n   -- only show specific item name\n   --  keep all unique line item, do not drop any\n- \"Request price\": show corresponding price in request. If not available, leave blank.\n- \"Document price\": show corresponding price (use prorated_amount if available) in document. If not available, leave blank. Must include citation: only apply citations to the document data. Do not hyperlink the text, only place an arrow link afterwards.\n- \"Suggested GL codes\": choose at most three corresponding GL code for the line item from  document GL codes, only show code and subcategory name in bullet list. If hard to decide exact GL code, choose at most two. Do not add anything else. \n\ncolumn 2: \"Request price\"\n\ncolumn 3: \"Document price\"\n\ncolumn 4: \"Suggested GL codes\"\n\n\n\n\n## Header: \"Documents used in analysis\" \nShow bullets: Filename of documents analyzed \nInclude citation, limit to to single citation per document. \nAdd in parentheses what the document is referenced on (e.g. Renewal, Original request, Master agreement, vendor record) \nFootnote (lighter text) \n\"If the documents listed here aren't what you expected, check that each one is correctly labeled with the right document type, then rerun the agent. Only PDF and docx files are supported.\"\n\ndocument data below:\n${steps.ai_3.response}\n\nrequest data below:\n${steps.ai_2.response}"
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document",
+              "zip_data"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          },
+          "model": {
+            "control": "picklist",
+            "value": "o4-mini"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_12",
+      "display_name": "extract line item from document",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "You are an document content extraction agent."
+          },
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "lineItems"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Document source: \n- check the documents attached to request ID ${steps.zip_1.id}\n- First check order form, if order form is not attached, check invoice and  SOW and then other documents.\n- do not make up document\n\n\nFor each line item in the document, extract the following fields if available:\n- product_name\n- list_unit_price\n- net_unit_price\n- quantity\n- total_amount\n- prorated_amount (if present)\n- citation\n\nRule:\n- MUST add citation sources: only apply citations to the document data. \n- do not make up content that are not in the document\n- If a value is missing, show \"null\""
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "totalPrice"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "if there are zero line items return \"Total price\". If there are at least 1 line item return \"\" do not add anything else."
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_2",
+      "display_name": "classify request data",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "take this request data and look for the following:\n-gl code\n-Location and if empty then request region\n-PII Risk or data sharing\n-vendor name\n-currency\nRequest data below:\n${steps.zip_1}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_3",
+      "display_name": "classify document",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "Review the full document(s) from request ID ${steps.zip_1.id} and reference the following document ${steps.ai_4.response.documentName}\n\nUsing the information below, classify the document:\n-Location (billing address)\n-PII Risk or data sharing\n-currency (make assumptions based on location or company names if not specified)\nKey Heuristics\n\nuse the specific purchase information below for direction when there are multiple documents:\n${steps.ai_4.response.purchase}\n\n\ndetermine the most relevant location from the following\n${steps.jinja_2.result}\n"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_4",
+      "display_name": "document check",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "document"
+            ]
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "Review the provided request data and the documents from request ID ${steps.zip_1.id}. \n\nYour task is to:\n1. Identify which attached document (e.g., invoice, quote, statement of work, order form, contract) is the most relevant match for the request data provided in the request data.\n2. Within that specific document, identify the exact item, tier, or service being purchased based on the request data. (Example: If the input data is for a \"Silver\" membership and the document lists Bronze, Silver, and Gold tiers, specify that the purchase is for the Silver tier).\n\nOutput the following:\n-boolean of if document was found\n- Document Name: [Name of the most relevant file]\n- Intended Purchase: [The specific tier, product, or service identified]\n-reason for decision\n\nConstraint: Do not make up documents or information. If no relevant document is found, state \"No relevant document found.\"\n\nNOTES:\nSome documents may include disclaimers such as “this is not a legal invoice.” These documents are still acceptable for reference if they contain billing information, pricing, or payment details.\n\nbelow is the request data:\n${steps.zip_1}"
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "structured"
+          },
+          "structured_schema": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "value"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "Return true if a relevant document was found otherwise return false"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "boolean"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "reason"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "reason why the documents are or are not invoices, quote, statement of work, if they are not."
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "documentName"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": "file name of the document"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "purchase"
+                  },
+                  "description": {
+                    "control": "text",
+                    "value": " Intended Purchase: The specific tier, product, or service identified"
+                  },
+                  "type": {
+                    "control": "picklist",
+                    "value": "string"
+                  }
+                }
+              }
+            ]
+          },
+          "model": {
+            "control": "picklist",
+            "value": "gpt-4.1"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_5",
+      "display_name": "no document assumption output",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "\"summary banner\"\nTitle:  \"Mismatch found\" or \"No mismatches found\" .\nSubtitle: if at least one mismatched field: \"Suggestions are based on request details only. Upload a supporting document (e.g., order form, SOW) for more accurate results.\" only if all fields match: \"Suggestions are based on request details only. Upload a supporting document (e.g., order form, SOW) for more accurate results.\"\n\nHeader \"Category validation\"\nGenerate a **Markdown table with exactly 3 columns** in this order:\n\nDo data validation on this request ${steps.zip_1.attributes[0].id} and with it's information fill out the following table.\n\n| Field | Request | Suggestion |\n|-------|---------|----------|\n   1. \"Category\" \n   2. \"Subcategory\" \n   3. \"GL account\" (sentence‑case, include number and description)  \n\n-for the document column if there are multiple possible options list them as dot bullet points\n-apply table rules below\n\n\n-For each row, place the match‑status emoji **before** the field name only using the following logic:\n   - green checkmark emoji= values match  (do not use if either document or request data is absent)\n   - red emoji= values are both available and do not match\n   - yellow hazard emoji= value missing in either the request or suggestion    \n\n\n\nRequest data below:\n${steps.ai_7.response}\n\nInference data below:\n${steps.ai_8.response}\n\nAfter the table, render a data validation component."
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "markdown"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_6",
+      "display_name": "classify gl code",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "reference the subcategory and map it to the correctly gl code. if there are multiple possible options pass them\n${steps.ai_2.response}\ngl codes\n${steps.memory_storage_6.value}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_7",
+      "display_name": "classify request data",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "zip_data"
+            ]
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "take this request data and extract the following:\n-gl code or item account\n-category\n-subcategory\n\nRequest data below:\n${steps.zip_1}\n"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_8",
+      "display_name": "request data assumption",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "user_prompt": {
+            "control": "text",
+            "value": "review the category, subcategory, gl code below. based on the context of the information it was passed with. If it is a good match keep it, if it is not a good match pick more suitable options from below. Provide justification for either decision.\n${steps.ai_7.response}\n\n\npick from the below if the above category and subcategory are considered not a good match.\n${steps.jinja_3.result}\n\nreference the subcategory and map it to the correctly gl code. if there are multiple possible options pass them\n\ngl codes\n${steps.memory_storage_6.value}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_1",
+      "display_name": "If invoice",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.ai_4.response.value"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "equals"
+                  },
+                  "right_value": {
+                    "control": "boolean",
+                    "value": true
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_2",
+      "display_name": "If condition",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.http_5.data.next_page_token"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "not_equals"
+                  },
+                  "right_value": {
+                    "control": "null",
+                    "value": null
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_3",
+      "display_name": "If zero gl codes",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "conditions": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "left_value": {
+                    "control": "ref",
+                    "value": "steps.http_4.data.total"
+                  },
+                  "operator": {
+                    "control": "picklist",
+                    "value": "equals"
+                  },
+                  "right_value": {
+                    "control": "number",
+                    "value": 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "http_1",
+      "display_name": "Get GL Codes",
+      "connector_key": "http",
+      "action_key": "$http_client",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "url": {
+            "control": "text",
+            "value": "/gl_codes"
+          },
+          "query_params": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "active"
+                  },
+                  "value": {
+                    "control": "text",
+                    "value": "True"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_client_connection"
+    },
+    {
+      "key": "http_2",
+      "display_name": "get locations",
+      "connector_key": "http",
+      "action_key": "$http_client",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "url": {
+            "control": "text",
+            "value": "/locations"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_client_connection"
+    },
+    {
+      "key": "http_3",
+      "display_name": "Send HTTP request",
+      "connector_key": "http",
+      "action_key": "$http_client",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "url": {
+            "control": "text",
+            "value": "/purchase_categories"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_client_connection"
+    },
+    {
+      "key": "http_4",
+      "display_name": "get GL codes",
+      "connector_key": "http",
+      "action_key": "$http_client",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "url": {
+            "control": "text",
+            "value": "/gl_codes"
+          },
+          "query_params": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "active"
+                  },
+                  "value": {
+                    "control": "text",
+                    "value": "true"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_client_connection"
+    },
+    {
+      "key": "http_5",
+      "display_name": "Get GL Codes",
+      "connector_key": "http",
+      "action_key": "$http_client",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "url": {
+            "control": "text",
+            "value": "/gl_codes"
+          },
+          "query_params": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "active"
+                  },
+                  "value": {
+                    "control": "text",
+                    "value": "True"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_client_connection"
+    },
+    {
+      "key": "jinja_1",
+      "display_name": "Render JSON template",
+      "connector_key": "jinja",
+      "action_key": "render_json_template",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "json_template": {
+            "control": "text",
+            "value": "[\n{% for item in input.data.list %}\n  {\n    \"gl_code\": {{ item.name | tojson }},\n    \"number\": {{ item.account_number | tojson }}\n  }{% if not loop.last %},{% endif %}\n{% endfor %}\n]\n"
+          },
+          "variables": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "input"
+                  },
+                  "value": {
+                    "control": "ref",
+                    "value": "steps.http_1"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "jinja_2",
+      "display_name": "parse locations",
+      "connector_key": "jinja",
+      "action_key": "render_json_template",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "json_template": {
+            "control": "text",
+            "value": "{\n  \"locations\": [\n  {% for item in input.data.list if item.type == \"location\" %}\n    {\n      \"name\": {{ item.name | tojson }}\n    }{% if not loop.last %},{% endif %}\n  {% endfor %}\n  ]\n}\n"
+          },
+          "variables": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "input"
+                  },
+                  "value": {
+                    "control": "ref",
+                    "value": "steps.http_2"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "jinja_3",
+      "display_name": "Render JSON template",
+      "connector_key": "jinja",
+      "action_key": "render_json_template",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "json_template": {
+            "control": "text",
+            "value": "{\n  \"categories\": [\n    {% for category in input.data.list %}\n    {\n      \"name\": {{ category.name | tojson }},\n      \"subcategories\": [\n        {% for sub in category.subcategories %}\n        {{ sub.name | tojson }}{% if not loop.last %},{% endif %}\n        {% endfor %}\n      ]\n    }{% if not loop.last %},{% endif %}\n    {% endfor %}\n  ]\n}\n"
+          },
+          "variables": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "input"
+                  },
+                  "value": {
+                    "control": "ref",
+                    "value": "steps.http_3"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "jinja_4",
+      "display_name": "Render JSON template",
+      "connector_key": "jinja",
+      "action_key": "render_json_template",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "variables": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "input"
+                  },
+                  "value": {
+                    "control": "ref",
+                    "value": "steps.http_5"
+                  }
+                }
+              }
+            ]
+          },
+          "json_template": {
+            "control": "text",
+            "value": "[\n{% for item in input.data.list %}\n  {\n    \"gl_code\": {{ item.name | tojson }},\n    \"number\": {{ item.account_number | tojson }}\n  }{% if not loop.last %},{% endif %}\n{% endfor %}\n]\n"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "loop_2",
+      "display_name": "Break loop",
+      "connector_key": "loop",
+      "action_key": "break_loop",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "loop_3",
+      "display_name": "Loop N times",
+      "connector_key": "loop",
+      "action_key": "loop_n_times",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "iteration_count": {
+            "control": "ref",
+            "value": "steps.python_1.result"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "memory_storage_2",
+      "display_name": "gl-code storage",
+      "connector_key": "memory_storage",
+      "action_key": "set_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "key": {
+            "control": "text",
+            "value": "items_accumulated_gl_codes"
+          },
+          "value": {
+            "control": "json",
+            "value": "[]"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "memory_storage_3",
+      "display_name": "Get next page token",
+      "connector_key": "memory_storage",
+      "action_key": "get_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "key": {
+            "control": "text",
+            "value": "next_page_token"
+          },
+          "default_value": {
+            "control": "null",
+            "value": null
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "memory_storage_4",
+      "display_name": "Append to gl-code storage",
+      "connector_key": "memory_storage",
+      "action_key": "append_to_list",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "key": {
+            "control": "text",
+            "value": "items_accumulated_gl_codes"
+          },
+          "value": {
+            "control": "ref",
+            "value": "steps.jinja_4.result"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "memory_storage_5",
+      "display_name": "update page token",
+      "connector_key": "memory_storage",
+      "action_key": "set_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "key": {
+            "control": "text",
+            "value": "next_page_token"
+          },
+          "value": {
+            "control": "ref",
+            "value": "steps.http_5.data.next_page_token"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "memory_storage_6",
+      "display_name": "Get GL codes",
+      "connector_key": "memory_storage",
+      "action_key": "get_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "key": {
+            "control": "text",
+            "value": "items_accumulated_gl_codes"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "memory_storage_7",
+      "display_name": "next page token storage",
+      "connector_key": "memory_storage",
+      "action_key": "set_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "key": {
+            "control": "text",
+            "value": "next_page_token"
+          },
+          "value": {
+            "control": "ref",
+            "value": "steps.http_1.data.next_page_token"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "memory_storage_8",
+      "display_name": "Append gl codes",
+      "connector_key": "memory_storage",
+      "action_key": "append_to_list",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "key": {
+            "control": "text",
+            "value": "items_accumulated_gl_codes"
+          },
+          "value": {
+            "control": "ref",
+            "value": "steps.jinja_1.result"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "python_1",
+      "display_name": "Page count ceiling ",
+      "connector_key": "python",
+      "action_key": "execute_script",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "script": {
+            "control": "code",
+            "value": "def execute(input):\n    roundedNumber = 0\n    size = input['size']\n    total = input['total']\n    roundedNumber = math.ceil(total/size)\n    return roundedNumber"
+          },
+          "variables": {
+            "control": "array",
+            "value": [
+              {
+                "control": "object",
+                "value": {
+                  "key": {
+                    "control": "text",
+                    "value": "total"
+                  },
+                  "value": {
+                    "control": "ref",
+                    "value": "steps.http_4.data.total"
+                  }
+                }
+              },
+              {
+                "control": "object",
+                "value": {
+                  "value": {
+                    "control": "ref",
+                    "value": "steps.http_4.data.size"
+                  },
+                  "key": {
+                    "control": "text",
+                    "value": "size"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_1",
+      "display_name": "Return approval assist output without line item",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_1.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_2",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "value": {
+            "control": "text",
+            "value": "${steps.ai_5.response}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "trigger",
+      "display_name": "Approval assist",
+      "connector_key": "ai",
+      "action_key": "approval_assist",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_1",
+      "display_name": "Get request",
+      "connector_key": "zip",
+      "action_key": "get_request",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "request_id": {
+            "control": "text",
+            "value": "${steps.trigger.request.id}"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    }
+  ],
+  "trigger_kind": "APPROVAL_ASSIST",
+  "type": "task_template",
+  "version": 1,
+  "workflow": {
+    "trigger": {
+      "key": "trigger",
+      "branches": null
+    },
+    "steps": [
+      {
+        "key": "zip_1",
+        "branches": null
+      },
+      {
+        "key": "http_3",
+        "branches": null
+      },
+      {
+        "key": "jinja_3",
+        "branches": null
+      },
+      {
+        "key": "http_2",
+        "branches": null
+      },
+      {
+        "key": "jinja_2",
+        "branches": null
+      },
+      {
+        "key": "http_4",
+        "branches": null
+      },
+      {
+        "key": "condition_3",
+        "branches": [
+          {
+            "key": "default",
+            "label": "False",
+            "steps": [
+              {
+                "key": "python_1",
+                "branches": null
+              },
+              {
+                "key": "http_1",
+                "branches": null
+              },
+              {
+                "key": "jinja_1",
+                "branches": null
+              },
+              {
+                "key": "memory_storage_2",
+                "branches": null
+              },
+              {
+                "key": "memory_storage_8",
+                "branches": null
+              },
+              {
+                "key": "memory_storage_7",
+                "branches": null
+              },
+              {
+                "key": "loop_3",
+                "branches": [
+                  {
+                    "key": "default",
+                    "label": null,
+                    "steps": [
+                      {
+                        "key": "memory_storage_3",
+                        "branches": null
+                      },
+                      {
+                        "key": "http_5",
+                        "branches": null
+                      },
+                      {
+                        "key": "jinja_4",
+                        "branches": null
+                      },
+                      {
+                        "key": "memory_storage_4",
+                        "branches": null
+                      },
+                      {
+                        "key": "condition_2",
+                        "branches": [
+                          {
+                            "key": "default",
+                            "label": "False",
+                            "steps": [
+                              {
+                                "key": "loop_2",
+                                "branches": null
+                              }
+                            ]
+                          },
+                          {
+                            "key": "true",
+                            "label": "True",
+                            "steps": [
+                              {
+                                "key": "memory_storage_5",
+                                "branches": null
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "true",
+            "label": "True",
+            "steps": []
+          }
+        ]
+      },
+      {
+        "key": "memory_storage_6",
+        "branches": null
+      },
+      {
+        "key": "ai_4",
+        "branches": null
+      },
+      {
+        "key": "condition_1",
+        "branches": [
+          {
+            "key": "default",
+            "label": "False",
+            "steps": [
+              {
+                "key": "ai_7",
+                "branches": null
+              },
+              {
+                "key": "ai_8",
+                "branches": null
+              },
+              {
+                "key": "ai_5",
+                "branches": null
+              },
+              {
+                "key": "return_2",
+                "branches": null
+              }
+            ]
+          },
+          {
+            "key": "true",
+            "label": "True",
+            "steps": [
+              {
+                "key": "ai_2",
+                "branches": null
+              },
+              {
+                "key": "ai_3",
+                "branches": null
+              },
+              {
+                "key": "ai_6",
+                "branches": null
+              },
+              {
+                "key": "ai_12",
+                "branches": null
+              },
+              {
+                "key": "ai_1",
+                "branches": null
+              },
+              {
+                "key": "return_1",
+                "branches": null
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

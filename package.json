@@ -1,0 +1,44 @@
+{
+  "name": "@zip/agent-builder-tui",
+  "version": "1.0.0",
+  "description": "Enterprise TUI for building Zip Agents via Mastracode",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "zip-builder": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@mastra/core": ">=1.5.0-alpha.1",
+    "mastracode": ">=0.1.0-alpha.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@mastra/core": "1.5.0-alpha.1",
+    "@types/node": "^20.0.0",
+    "mastracode": "0.1.0-alpha.3",
+    "tsup": "^8.3.6",
+    "typescript": "^5.5.0"
+  }
+}
