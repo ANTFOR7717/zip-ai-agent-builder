@@ -1,9 +1,5 @@
-// Barrel file for prompts - re-export all subagent prompts
-export { ORCHESTRATOR_PROMPT } from "./orchestrator.js";
-export { VALIDATOR_PROMPT } from "./validator.js";
-export { GENERATOR_PROMPT } from "./generator.js";
-export { STEPBUILDER_PROMPT } from "./stepBuilder.js";
-export { COMPOSER_PROMPT } from "./composer.js";
-export { MODIFIER_PROMPT } from "./modifier.js";
-export { AUDITOR_PROMPT } from "./auditor.js";
-export { IDMANAGER_PROMPT } from "./idManager.js";
+// src/prompts/index.ts — re-exports only the Zip-Pilot prompt
+// Old prompts (orchestrator, validator, generator, stepBuilder, composer, modifier, auditor, idManager)
+// are no longer used. This file exports only ZIP_PILOT_PROMPT.
+
+export { ZIP_PILOT_PROMPT } from "./zip-pilot.js";

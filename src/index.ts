@@ -1,114 +1,76 @@
+// src/index.ts — Programmatic Agent Builder (V5)
+// Replaces the old 8-subagent architecture with a single Zip-Pilot that calls
+// programmatic builder tools instead of generating raw JSON.
+
 import { createMastraCode } from "mastracode";
 import { MastraTUI } from "mastracode/tui";
 import { parseConfig, ZipBuilderOptions, ZipBuilderConfig } from "./config.js";
 import { createZipTools } from "./tools.js";
 import { createTheme } from "./theme.js";
-
-import {
-    ORCHESTRATOR_PROMPT,
-    VALIDATOR_PROMPT,
-    GENERATOR_PROMPT,
-    STEPBUILDER_PROMPT,
-    COMPOSER_PROMPT,
-    MODIFIER_PROMPT,
-    AUDITOR_PROMPT,
-    IDMANAGER_PROMPT,
-} from "./prompts/index.js";
+import { ZIP_PILOT_PROMPT } from "./prompts/index.js";
 
 export type { ZipBuilderOptions, ZipBuilderConfig };
 export { createTheme } from "./theme.js";
 
 /**
- * Validates config, mounts dependencies, and bootstraps the Mastra harness and TUI.
+ * Bootstraps the Zip Agent Builder harness with a single Zip-Pilot subagent.
+ * Zip-Pilot receives all 17 builder tools and builds agents programmatically
+ * rather than generating raw JSON through multi-agent prompt chains.
  */
 export function createZipAgentBuilder(rawOptions: Partial<ZipBuilderOptions> = {}) {
     const config = parseConfig(rawOptions);
 
-    // Apply the custom Zip Builder theme
     createTheme();
 
     const tools = createZipTools(config);
 
     if (config.verbose) {
-        console.log(`[INFO] Initializing Mastra Code Harness with model: ${config.defaultModelId}`);
+        console.log(
+            `[INFO] Zip Agent Builder initialized. Model: ${config.defaultModelId}`
+        );
     }
 
     const { harness } = createMastraCode({
         subagents: [
             {
-                id: "orchestrator",
-                name: "Orchestrator",
-                description: "Coordinates subagents to build Zip agents",
-                instructions: ORCHESTRATOR_PROMPT,
+                id: "zip-pilot",
+                name: "Zip-Pilot",
+                description:
+                    "Translates user intent into Zip Agent JSON by calling programmatic builder tools. " +
+                    "Builds agents accurately and deterministically without generating raw JSON.",
+                instructions: ZIP_PILOT_PROMPT,
                 defaultModelId: config.defaultModelId,
-                allowedHarnessTools: ["subagent"]  // Can call subagents, CANNOT save
-            },
-            {
-                id: "validator",
-                name: "Validator",
-                description: "Validates agent JSON against schema",
-                instructions: VALIDATOR_PROMPT,
-                defaultModelId: config.defaultModelId,
-                allowedHarnessTools: ["readAgent"]  // Can compare against schema
-            },
-            {
-                id: "generator",
-                name: "Generator",
-                description: "Creates new Zip agent JSON",
-                instructions: GENERATOR_PROMPT,
-                defaultModelId: config.defaultModelId,
-                allowedHarnessTools: ["listAgents", "readAgent"]  // Can read valid agents
-            },
-            {
-                id: "stepBuilder",
-                name: "Step Builder",
-                description: "Builds individual step definitions",
-                instructions: STEPBUILDER_PROMPT,
-                defaultModelId: config.defaultModelId
-            },
-            {
-                id: "composer",
-                name: "Composer",
-                description: "Assembles steps into workflows",
-                instructions: COMPOSER_PROMPT,
-                defaultModelId: config.defaultModelId
-            },
-            {
-                id: "modifier",
-                name: "Modifier",
-                description: "Modifies existing agents",
-                instructions: MODIFIER_PROMPT,
-                defaultModelId: config.defaultModelId
-            },
-            {
-                id: "auditor",
-                name: "Auditor",
-                description: "Strict validation of generated agents",
-                instructions: AUDITOR_PROMPT,
-                defaultModelId: config.defaultModelId,
-                allowedHarnessTools: ["saveAgent"]  // ONLY agent that can save
-            },
-            {
-                id: "idManager",
-                name: "ID Manager",
-                description: "Manages step ID patterns",
-                instructions: IDMANAGER_PROMPT,
-                defaultModelId: config.defaultModelId
+                // Zip-Pilot has access to all 17 builder tools
+                allowedHarnessTools: [
+                    "initializeAgent",
+                    "addApprovalTrigger",
+                    "addGetRequestStep",
+                    "addGetVendorStep",
+                    "addHttpStep",
+                    "addAiStep",
+                    "addConditionStep",
+                    "addReturnStep",
+                    "addJinjaStep",
+                    "addLoopStep",
+                    "addBreakStep",
+                    "addMemorySetStep",
+                    "addMemoryGetStep",
+                    "addMemoryAppendStep",
+                    "addPythonStep",
+                    "setCursor",
+                    "compileAndSave",
+                ],
             },
         ],
         extraTools: tools,
         initialState: { currentModelId: config.defaultModelId },
     });
 
-    // Subagent tool is always needed - tools access controlled via allowedHarnessTools
-    harness.grantSessionTool("subagent");
-
-    // Create (but do not automatically run) the TUI
     const tui = new MastraTUI({
         harness,
         appName: "Zip Agent Builder",
         verbose: config.verbose,
     });
 
-    return { harness, tui, config }; // Export the config back to the consumer
+    return { harness, tui, config };
 }
