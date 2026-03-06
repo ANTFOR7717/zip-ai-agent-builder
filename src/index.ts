@@ -4,14 +4,16 @@ import { parseConfig, ZipBuilderOptions, ZipBuilderConfig } from "./config.js";
 import { createZipTools } from "./tools.js";
 import { createTheme } from "./theme.js";
 
-import { ORCHESTRATOR_PROMPT } from "./prompts/orchestrator.js";
-import { VALIDATOR_PROMPT } from "./prompts/validator.js";
-import { GENERATOR_PROMPT } from "./prompts/generator.js";
-import { STEPBUILDER_PROMPT } from "./prompts/stepBuilder.js";
-import { COMPOSER_PROMPT } from "./prompts/composer.js";
-import { MODIFIER_PROMPT } from "./prompts/modifier.js";
-import { AUDITOR_PROMPT } from "./prompts/auditor.js";
-import { IDMANAGER_PROMPT } from "./prompts/idManager.js";
+import {
+    ORCHESTRATOR_PROMPT,
+    VALIDATOR_PROMPT,
+    GENERATOR_PROMPT,
+    STEPBUILDER_PROMPT,
+    COMPOSER_PROMPT,
+    MODIFIER_PROMPT,
+    AUDITOR_PROMPT,
+    IDMANAGER_PROMPT,
+} from "./prompts/index.js";
 
 export type { ZipBuilderOptions, ZipBuilderConfig };
 export { createTheme } from "./theme.js";

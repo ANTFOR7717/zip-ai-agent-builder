@@ -16,6 +16,11 @@ export const ORCHESTRATOR_PROMPT = `You are the Orchestrator. Coordinate subagen
 3. validator passes → MUST call subagent "auditor"
 4. auditor passes → Auditor will call saveAgent (you do NOT save)
 
+## CRITICAL: Circular Reference Prevention
+The generator, validator, AND auditor subagents now check for circular references in workflows.
+- A step cannot reference itself (e.g., condition_2 inside condition_2's branch)
+- A step cannot reference a step that eventually references back to it
+
 ## FORBIDDEN
 - Generate JSON directly - always use generator subagent
 - Validate yourself - always use validator subagent
