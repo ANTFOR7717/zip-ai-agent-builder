@@ -577,5 +577,28 @@ export function createZipTools(config: ZipBuilderConfig) {
                 }
             },
         },
+
+        // ── Planning Mode Storage ──────────────────────────────────────────────────
+
+        saveAgentPlan: {
+            name: "saveAgentPlan",
+            description: "Saves a generated plan to the configured plan directory.",
+            parameters: z.object({
+                filename: z.string().describe("Name of the file (without extension)"),
+                content: z.string().describe("The full text content of the plan"),
+            }).shape,
+            execute: async ({ filename, content }: { filename: string; content: string }) => {
+                try {
+                    const planDir = path.resolve(process.cwd(), config.planDir);
+                    await fs.mkdir(planDir, { recursive: true });
+                    const safeName = filename.replace(/[^a-zA-Z0-9_-]/g, "");
+                    const fullPath = path.join(planDir, `${safeName}.md`);
+                    await fs.writeFile(fullPath, content, "utf-8");
+                    return { success: true, message: `Plan saved to ${fullPath}` };
+                } catch (e) {
+                    return { success: false, error: (e as Error).message };
+                }
+            },
+        },
     };
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const BuilderConfigSchema = z.object({
     outputDir: z.string().default("build-agents"),
+    planDir: z.string().default("plan-agents"),
     defaultModelId: z.string().default("kilo/minimax/minimax-m2.5:free"),
     verbose: z.boolean().default(true),
     validAgentsDir: z.string().default("examples/Valid-Agents"),

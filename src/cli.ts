@@ -6,6 +6,7 @@ async function main() {
     // Gracefully translate string environments into programmatic defaults
     const rawConfig = {
         outputDir: process.env.ZIP_OUTPUT_DIR,
+        planDir: process.env.ZIP_PLAN_DIR,
         defaultModelId: process.env.ZIP_DEFAULT_MODEL,
         verbose: process.env.ZIP_VERBOSE !== "false",
         validAgentsDir: process.env.ZIP_VALID_AGENTS_DIR,
