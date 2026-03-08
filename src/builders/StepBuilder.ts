@@ -54,6 +54,51 @@ export interface ZipStep {
 // ── StepBuilder ───────────────────────────────────────────────────────────────
 
 export class StepBuilder {
+    /**
+     * Intelligently parses Zip template values to assign the safest runtime control AST type.
+     * Prevents destructive type-coercion (flattening arrays/objects to strings) when 
+     * single variables are passed using template literal syntax.
+     */
+    public static resolveControl(valueRef: string): { control: string; value: any } {
+        if (typeof valueRef !== "string") return { control: "json", value: valueRef };
+        const singleVarMatch = valueRef.match(/^\$\{([^}]+)\}$/);
+        if (singleVarMatch) {
+            return { control: "ref", value: singleVarMatch[1] };
+        }
+        if (valueRef.includes("${")) {
+            return { control: "text", value: valueRef };
+        }
+        if (valueRef.startsWith("steps.") || valueRef.startsWith("trigger.")) {
+            return { control: "ref", value: valueRef };
+        }
+        if (valueRef.startsWith("[") || valueRef.startsWith("{")) {
+            return { control: "json", value: valueRef };
+        }
+        return { control: "text", value: valueRef };
+    }
+
+    /**
+     * Helper to materialize structured_schema / output_schema items
+     * into the correct production control shape required by Zip.
+     * Maps { key, type, description } into nested object controls.
+     */
+    public static makeSchemaArray(fields: any[]) {
+        if (!fields || !Array.isArray(fields)) return [];
+        return fields.map((f) => {
+            // Passthrough if already shaped correctly
+            if (f.control === "object" && f.value && f.value.key) {
+                return f;
+            }
+            return {
+                control: "object",
+                value: {
+                    key: { control: "text", value: f.key },
+                    description: { control: "text", value: f.description },
+                    type: { control: "picklist", value: f.type },
+                },
+            };
+        });
+    }
 
     // ── 1 of 14: $http_client ──────────────────────────────────────────────────
     // CITED: IntakeV2 L510-525 (GET, no method field)
@@ -120,7 +165,6 @@ export class StepBuilder {
         operator: "equals" | "not_equals",
         right_op: string | boolean | number | null
     ): ZipStep {
-        const leftControl = left_op.includes("${") ? "text" : "ref";
         const rightControl =
             right_op === null
                 ? "null"
@@ -146,7 +190,7 @@ export class StepBuilder {
                             {
                                 control: "object",
                                 value: {
-                                    left_value: { control: leftControl, value: left_op },
+                                    left_value: StepBuilder.resolveControl(left_op),
                                     operator: { control: "picklist", value: operator },
                                     right_value: { control: rightControl, value: right_op },
                                 },
@@ -196,7 +240,7 @@ export class StepBuilder {
                         ? { array_schema: { control: "boolean", value: opts.arraySchema } }
                         : {}),
                     ...(opts?.outputSchema
-                        ? { output_schema: { control: "array", value: opts.outputSchema } }
+                        ? { output_schema: { control: "array", value: StepBuilder.makeSchemaArray(opts.outputSchema) } }
                         : {}),
                     user_prompt: { control: "text", value: userPrompt },
                     ...(opts?.tools !== undefined
@@ -215,7 +259,7 @@ export class StepBuilder {
                         ? { model: { control: "picklist", value: opts.model } }
                         : {}),
                     ...(opts?.structuredSchema
-                        ? { structured_schema: { control: "array", value: opts.structuredSchema } }
+                        ? { structured_schema: { control: "array", value: StepBuilder.makeSchemaArray(opts.structuredSchema) } }
                         : {}),
                 },
             },
@@ -243,7 +287,6 @@ export class StepBuilder {
     // CITED: PoC L43-55 ("text" control, ${} interpolation)
     // FINDING: "ref" for bare step paths, "text" for ${} interpolated strings.
     static getRequest(key: string, name: string, requestIdValue: string): ZipStep {
-        const isInterpolated = requestIdValue.includes("${");
         return {
             key,
             display_name: name,
@@ -255,7 +298,7 @@ export class StepBuilder {
             input_config: {
                 control: "object",
                 value: {
-                    request_id: { control: isInterpolated ? "text" : "ref", value: requestIdValue },
+                    request_id: StepBuilder.resolveControl(requestIdValue),
                 },
             },
         };
@@ -266,7 +309,6 @@ export class StepBuilder {
     // CITED: Adverse media L483-499 ("text" + "${}" interpolation)
     // FINDING: isInterpolated rule applies — same as get_request and return_value.
     static getVendor(key: string, name: string, vendorIdValue: string): ZipStep {
-        const isInterpolated = vendorIdValue.includes("${");
         return {
             key,
             display_name: name,
@@ -278,7 +320,7 @@ export class StepBuilder {
             input_config: {
                 control: "object",
                 value: {
-                    vendor_id: { control: isInterpolated ? "text" : "ref", value: vendorIdValue },
+                    vendor_id: StepBuilder.resolveControl(vendorIdValue),
                 },
             },
         };
@@ -289,7 +331,6 @@ export class StepBuilder {
     // CITED: DuplicateSupplier L538-553 ("text", ${} interpolation)
     // CITED: PoC L369-382 ("text", ${} interpolation)
     static returnValue(key: string, name: string, valueExpr: string): ZipStep {
-        const isInterpolated = valueExpr.includes("${");
         return {
             key,
             display_name: name,
@@ -301,7 +342,7 @@ export class StepBuilder {
             input_config: {
                 control: "object",
                 value: {
-                    value: { control: isInterpolated ? "text" : "ref", value: valueExpr },
+                    value: StepBuilder.resolveControl(valueExpr),
                 },
             },
         };
@@ -388,15 +429,6 @@ export class StepBuilder {
         varKey: string,
         valueRef: string
     ): ZipStep {
-        const control =
-            valueRef.includes("${")
-                ? "text"
-                : valueRef.startsWith("steps.")
-                    ? "ref"
-                    : valueRef.startsWith("[") || valueRef.startsWith("{")
-                        ? "json"
-                        : "text";
-
         return {
             key,
             display_name: name,
@@ -409,7 +441,7 @@ export class StepBuilder {
                 control: "object",
                 value: {
                     key: { control: "text", value: varKey },
-                    value: { control, value: valueRef },
+                    value: StepBuilder.resolveControl(valueRef),
                 },
             },
         };
@@ -452,7 +484,6 @@ export class StepBuilder {
         storageKey: string,
         valueRef: string
     ): ZipStep {
-        const isInterpolated = valueRef.includes("${");
         return {
             key,
             display_name: name,
@@ -465,7 +496,7 @@ export class StepBuilder {
                 control: "object",
                 value: {
                     key: { control: "text", value: storageKey },
-                    value: { control: isInterpolated ? "text" : "ref", value: valueRef },
+                    value: StepBuilder.resolveControl(valueRef),
                 },
             },
         };

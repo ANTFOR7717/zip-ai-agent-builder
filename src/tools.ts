@@ -8,13 +8,21 @@ import path from "path";
 import { StepBuilder } from "./builders/StepBuilder.js";
 import { AgentBuilder } from "./builders/AgentBuilder.js";
 import { ZipBuilderConfig } from "./config.js";
+import { AgentPlanDraftSchema, normalizePlanFilename, renderAgentPlanMdx } from "./builders/PlanBuilder.js";
 
 // Module-level builder instance — one session = one agent build
 let activeBuilder: AgentBuilder | null = null;
 
+export interface ToolResult {
+    success: boolean;
+    error?: string;
+    filepath?: string;
+    source?: string;
+}
+
 // Error passthrough helper: any throw from StepBuilder or AgentBuilder
 // propagates directly to Zip-Pilot as { success: false, error: message }
-const run = (fn: () => void): { success: boolean; error?: string } => {
+const run = (fn: () => void): ToolResult => {
     try {
         fn();
         return { success: true };
@@ -30,27 +38,11 @@ const makeVarsArray = (vars: Array<{ key: string; valueRef: string }>) =>
         control: "object",
         value: {
             key: { control: "text", value: v.key },
-            value: {
-                control: v.valueRef.includes("${") ? "text" : "ref",
-                value: v.valueRef,
-            },
+            value: StepBuilder.resolveControl(v.valueRef),
         },
     }));
 
-// BUG 2 FIX: Helper to materialize structured_schema / output_schema items
-// into the correct production control shape.
-// CITED: contract_analysis_agent.json L77-165 — every item is:
-// { control:"object", value:{ key:{control:"text",...}, description:{control:"text",...}, type:{control:"picklist",...} } }
-// The AI passes flat { key, type, description } objects; this wraps them correctly.
-const makeSchemaArray = (fields: Array<{ key: string; type: string; description: string }>) =>
-    fields.map((f) => ({
-        control: "object",
-        value: {
-            key: { control: "text", value: f.key },
-            description: { control: "text", value: f.description },
-            type: { control: "picklist", value: f.type },
-        },
-    }));
+
 
 export function createZipTools(config: ZipBuilderConfig) {
     return {
@@ -74,7 +66,7 @@ export function createZipTools(config: ZipBuilderConfig) {
                         "Set false only if user explicitly requests custom key names."
                     ),
             }).shape,
-            execute: async ({ name, strictKeyNames }: { name: string; strictKeyNames: boolean }) => {
+            execute: async ({ name, strictKeyNames }: { name: string; strictKeyNames: boolean }): Promise<ToolResult> => {
                 activeBuilder = new AgentBuilder(name, { strictKeyNames });
                 return { success: true };
             },
@@ -239,9 +231,8 @@ export function createZipTools(config: ZipBuilderConfig) {
                             tools: p.tools,
                             outputFormat: p.outputFormat,
                             model: p.model,
-                            // BUG 2 FIX: wrap schema items in production control shape before passing to StepBuilder
-                            structuredSchema: p.structuredSchema ? makeSchemaArray(p.structuredSchema) : undefined,
-                            outputSchema: p.outputSchema ? makeSchemaArray(p.outputSchema) : undefined,
+                            structuredSchema: p.structuredSchema,
+                            outputSchema: p.outputSchema,
                             arraySchema: p.arraySchema,
                             includeCitations: p.includeCitations,
                             dataSources: p.dataSources,
@@ -541,7 +532,7 @@ export function createZipTools(config: ZipBuilderConfig) {
                         "Omit when parentId is null."
                     ),
             }).shape,
-            execute: async (p: { parentId: string | null; branch?: "true" | "default" }) => {
+            execute: async (p: { parentId: string | null; branch?: "true" | "default" }): Promise<ToolResult> => {
                 if (!activeBuilder) return { success: false, error: "Call initializeAgent first" };
                 activeBuilder.setCursor(p.parentId, p.branch);
                 return { success: true };
@@ -562,7 +553,7 @@ export function createZipTools(config: ZipBuilderConfig) {
                     .string()
                     .describe("Output filename e.g. 'my-agent.json' or 'my-agent'"),
             }).shape,
-            execute: async ({ filename }: { filename: string }) => {
+            execute: async ({ filename }: { filename: string }): Promise<ToolResult> => {
                 if (!activeBuilder) return { success: false, error: "Call initializeAgent first" };
                 try {
                     const json = activeBuilder.compile();
@@ -582,19 +573,42 @@ export function createZipTools(config: ZipBuilderConfig) {
 
         saveAgentPlan: {
             name: "saveAgentPlan",
-            description: "Saves a generated plan to the configured plan directory.",
+            description: "Validates a planning draft, renders it as MDX, and creates or overwrites a plan file in the configured plan directory.",
             parameters: z.object({
-                filename: z.string().describe("Name of the file (without extension)"),
-                content: z.string().describe("The full text content of the plan"),
+                filename: z.string().describe("Plan filename without extension"),
+                planDraft: z.preprocess((val) => {
+                    if (typeof val === "string") {
+                        try { return JSON.parse(val); } catch (e) { return val; }
+                    }
+                    return val;
+                }, AgentPlanDraftSchema).describe("Business-level planning draft used to render the MDX plan"),
             }).shape,
-            execute: async ({ filename, content }: { filename: string; content: string }) => {
+            execute: async ({ filename, planDraft }: { filename: string; planDraft: any }): Promise<ToolResult> => {
                 try {
+                    const mdx = renderAgentPlanMdx(planDraft);
                     const planDir = path.resolve(process.cwd(), config.planDir);
                     await fs.mkdir(planDir, { recursive: true });
-                    const safeName = filename.replace(/[^a-zA-Z0-9_-]/g, "");
-                    const fullPath = path.join(planDir, `${safeName}.md`);
-                    await fs.writeFile(fullPath, content, "utf-8");
-                    return { success: true, message: `Plan saved to ${fullPath}` };
+                    const fullPath = path.join(planDir, normalizePlanFilename(filename));
+                    await fs.writeFile(fullPath, mdx, "utf-8");
+                    return { success: true, filepath: fullPath };
+                } catch (e) {
+                    return { success: false, error: (e as Error).message };
+                }
+            },
+        },
+
+        readAgentPlan: {
+            name: "readAgentPlan",
+            description: "Reads a saved MDX plan and returns the rendered source for review, planner-side reconstruction of planDraft, or build translation.",
+            parameters: z.object({
+                filename: z.string().describe("Plan filename with or without .mdx"),
+            }).shape,
+            execute: async ({ filename }: { filename: string }): Promise<ToolResult> => {
+                try {
+                    const planDir = path.resolve(process.cwd(), config.planDir);
+                    const fullPath = path.join(planDir, normalizePlanFilename(filename));
+                    const source = await fs.readFile(fullPath, "utf-8");
+                    return { success: true, filepath: fullPath, source };
                 } catch (e) {
                     return { success: false, error: (e as Error).message };
                 }

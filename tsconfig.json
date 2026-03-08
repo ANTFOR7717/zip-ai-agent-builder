@@ -9,10 +9,12 @@
         "strictNullChecks": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
+        "downlevelIteration": true,
         "forceConsistentCasingInFileNames": true,
         "outDir": "./dist"
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "scripts/**/*"
     ]
 }

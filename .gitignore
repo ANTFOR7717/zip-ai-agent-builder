@@ -3,4 +3,5 @@ dist/
 .env
 output-agents/
 build-agents/
+plan-agents/
 *.tsbuildinfo

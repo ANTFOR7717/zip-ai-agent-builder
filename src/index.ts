@@ -53,7 +53,8 @@ export function createZipAgentBuilder(rawOptions: Partial<ZipBuilderOptions> = {
             addMemoryAppendStep: tools.addMemoryAppendStep,
             addPythonStep: tools.addPythonStep,
             setCursor: tools.setCursor,
-            compileAndSave: tools.compileAndSave
+            compileAndSave: tools.compileAndSave,
+            readAgentPlan: tools.readAgentPlan
         }
     });
 
@@ -62,7 +63,10 @@ export function createZipAgentBuilder(rawOptions: Partial<ZipBuilderOptions> = {
         name: "Zip-Planner",
         instructions: ZIP_PLANNER_PROMPT,
         model: config.defaultModelId,
-        tools: { saveAgentPlan: tools.saveAgentPlan }
+        tools: {
+            saveAgentPlan: tools.saveAgentPlan,
+            readAgentPlan: tools.readAgentPlan
+        }
     });
 
     const { harness } = createMastraCode({
