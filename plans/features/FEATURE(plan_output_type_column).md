@@ -39,15 +39,8 @@ const PlanNodeSchema = z.object({
     nodeId: PlanNodeIdSchema,
     purpose: z.string(),
     keysTypesValues: z.string(),
-    types: z.enum([
-        "string",
-        "number",
-        "boolean",
-        "object",
-        "array",
-        "null"
-    ]).optional().describe(
-        "The strict JSON type of the output payload. " +
+    types: z.string().optional().describe(
+        "Comma-separated list of exact JSON primitive types (string, number, boolean, object, array, null). " +
         "Required for compiling the final JSON template. " +
         "Leave undefined for void nodes."
     ),
@@ -108,4 +101,4 @@ Generated MDX table should render as:
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | trigger | Approval assist | trigger | Receive request | request.id | string | N/A |
 | ui | Display Form | ui_1 | Show screen | | — | Render component |
-| ai | Risk analysis | ai_1 | Score vendor | response.score | object | Analyze the vendor... |
+| ai | Risk analysis | ai_1 | Score vendor | response.score, response.flag | number, boolean | Analyze the vendor... |

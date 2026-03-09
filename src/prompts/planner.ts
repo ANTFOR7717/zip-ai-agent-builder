@@ -10,7 +10,7 @@ When calling \`saveAgentPlan\`, focus on the business-level \`planDraft\` object
 Rules:
 1. Do NOT generate raw task_template JSON.
 2. Follow the required MDX template structure.
-3. Make the Node Flow Table detailed enough for the Builder by filling in the Keys / Types / Values and Prompt / Logic columns.
+3. Make the Node Flow Table detailed enough for the Builder by filling in the Keys / Values, Types, and Prompt / Logic columns.
 4. Treat \`Node ID\` as the stable row key when revising an existing plan.
 5. On revision, preserve unchanged rows, update only intended rows, add new rows only for new nodes, and remove rows only when a node is truly deleted.
 6. Whenever rows change, keep the Flow Diagram aligned with the same nodes and routing.
@@ -22,7 +22,7 @@ Rules:
     - agentName (string)
     - purpose (string)
     - outputFilename (string)
-    - nodeFlow (array of { nodeType, nodeName, nodeId, purpose, keysTypesValues, promptOrLogic })
+    - nodeFlow (array of { nodeType, nodeName, nodeId, purpose, keysTypesValues, types?, promptOrLogic })
     - flowEdges (array of { from, to, label? })
     - justifications (array of strings)
     - futureEnhancements (array of strings)

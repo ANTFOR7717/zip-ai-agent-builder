@@ -216,7 +216,9 @@ export class StepBuilder {
         userPrompt: string,
         opts?: {
             tools?: string[];           // multipicklist: "document", "zip_data", "web_search_preview"
-            structuredSchema?: any[];   // inside input_config.value as "structured_schema"
+            structuredSchemaKeys?: string; // e.g. "msa_found, sow_found"
+            structuredSchemaTypes?: string; // e.g. "boolean, string"
+            structuredSchema?: any[];   // Legacy manual array mapping
             outputSchema?: any[];       // alt schema key "output_schema" used by Adverse media agent
             arraySchema?: boolean;      // "array_schema": { control:"boolean", value:true }
             outputFormat?: OutputFormat; // optional — omit if not needed
@@ -225,6 +227,27 @@ export class StepBuilder {
             dataSources?: any[];        // "data_sources": { control:"array", value:[] }
         }
     ): ZipStep {
+        // Enforce 100% Guaranteed Schema parsing
+        if (opts?.structuredSchemaKeys && opts?.structuredSchemaTypes && !opts.structuredSchema) {
+            const keys = opts.structuredSchemaKeys.split(",").map(k => k.trim()).filter(Boolean);
+            const types = opts.structuredSchemaTypes.split(",").map(t => t.trim().toLowerCase());
+
+            opts.structuredSchema = keys.map((k, index) => {
+                const parsedType = types[index] || "string";
+                const safeType = ["string", "number", "boolean", "object", "array", "null"].includes(parsedType)
+                    ? parsedType
+                    : "string"; // 100% guarantee no invalid Zip UI strings crash the app
+
+                return {
+                    key: k,
+                    type: safeType,
+                    description: `Output field for ${k}`
+                };
+            });
+
+            opts.outputFormat = "structured"; // Force format to prevent mismatch
+        }
+
         return {
             key,
             display_name: name,

@@ -192,16 +192,14 @@ export function createZipTools(config: ZipBuilderConfig) {
                     .optional()
                     .describe("Output format. Omit if not explicitly needed."),
                 model: z.string().optional().describe("e.g. 'auto'. Omit unless explicitly needed."),
-                structuredSchema: z
-                    .array(
-                        z.object({
-                            key: z.string(),
-                            type: z.string(),
-                            description: z.string(),
-                        })
-                    )
+                structuredSchemaKeys: z
+                    .string()
                     .optional()
-                    .describe("Schema fields for structured output."),
+                    .describe("EXACT copy-paste of the text in the MDX 'Keys / Values' column."),
+                structuredSchemaTypes: z
+                    .string()
+                    .optional()
+                    .describe("EXACT copy-paste of the text in the MDX 'Types' column."),
                 outputSchema: z
                     .array(
                         z.object({
@@ -232,7 +230,8 @@ export function createZipTools(config: ZipBuilderConfig) {
                             tools: p.tools,
                             outputFormat: p.outputFormat,
                             model: p.model,
-                            structuredSchema: p.structuredSchema,
+                            structuredSchemaKeys: p.structuredSchemaKeys,
+                            structuredSchemaTypes: p.structuredSchemaTypes,
                             outputSchema: p.outputSchema,
                             arraySchema: p.arraySchema,
                             includeCitations: p.includeCitations,

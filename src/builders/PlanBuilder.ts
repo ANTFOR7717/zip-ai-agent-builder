@@ -21,6 +21,11 @@ const PlanNodeSchema = z.object({
     nodeId: PlanNodeIdSchema,
     purpose: z.string(),
     keysTypesValues: z.string(),
+    types: z.string().optional().describe(
+        "Comma-separated list of exact JSON primitive types (string, number, boolean, object, array, null). " +
+        "Required for compiling the final JSON template. " +
+        "Leave undefined for void nodes."
+    ),
     promptOrLogic: z.string(),
 });
 
@@ -198,10 +203,10 @@ function renderOverview(plan: AgentPlanDraft): string {
 
 function renderNodeFlowTable(plan: AgentPlanDraft): string {
     return renderSection(SECTION_TITLES.nodeFlow, [
-        "| Node Type | Node Name | Node ID | Purpose | Keys / Types / Values | Prompt / Logic |",
-        "| :--- | :--- | :--- | :--- | :--- | :--- |",
+        "| Node Type | Node Name | Node ID | Purpose | Keys / Values | Types | Prompt / Logic |",
+        "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
         ...plan.nodeFlow.map((node) =>
-            `| ${escapeTableCell(node.nodeType)} | ${escapeTableCell(node.nodeName)} | \`${escapeTableCell(node.nodeId)}\` | ${escapeTableCell(node.purpose)} | ${escapeTableCell(node.keysTypesValues)} | ${escapeTableCell(node.promptOrLogic)} |`
+            `| ${escapeTableCell(node.nodeType)} | ${escapeTableCell(node.nodeName)} | \`${escapeTableCell(node.nodeId)}\` | ${escapeTableCell(node.purpose)} | ${escapeTableCell(node.keysTypesValues)} | ${escapeTableCell(node.types ?? "—")} | ${escapeTableCell(node.promptOrLogic)} |`
         ),
     ]);
 }

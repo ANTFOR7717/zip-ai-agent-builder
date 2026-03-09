@@ -1,0 +1,431 @@
+{
+  "config_pages": [
+    {
+      "title": "Connections",
+      "description": "",
+      "items": [
+        {
+          "kind": "config_var",
+          "config_var_key": "http_connection"
+        }
+      ]
+    },
+    {
+      "title": "Setup",
+      "description": "",
+      "items": []
+    }
+  ],
+  "config_vars": {
+    "http_connection": {
+      "key": "http_connection",
+      "title": "Http connection",
+      "description": null,
+      "required": true,
+      "kind": "connection",
+      "connector": {
+        "key": "http"
+      }
+    }
+  },
+  "exported_at": "2026-03-09T01:34:52.499Z",
+  "flow_config_pages": [],
+  "flow_config_vars": {},
+  "is_concurrent_job_limit_enabled": true,
+  "is_long_running": false,
+  "name": "New PoC Agent",
+  "steps_data": [
+    {
+      "key": "ai_1",
+      "display_name": "Generic AI",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "web_search_preview",
+              "document",
+              "zip_data",
+              "ai_company_context"
+            ]
+          },
+          "output_format": {
+            "control": "picklist",
+            "value": "raw"
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": false
+          },
+          "user_prompt": {
+            "control": "text",
+            "value": "example"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "ai_2",
+      "display_name": "Generic AI",
+      "connector_key": "ai",
+      "action_key": "generic_ai",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "tools": {
+            "control": "multipicklist",
+            "value": [
+              "web_search_preview"
+            ]
+          },
+          "include_citations": {
+            "control": "boolean",
+            "value": true
+          },
+          "user_prompt": {
+            "control": "ref",
+            "value": "steps.ai_1.response"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_1",
+      "display_name": "If condition",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "condition_2",
+      "display_name": "If condition",
+      "connector_key": "condition",
+      "action_key": "if_condition",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "datetime_utils_1",
+      "display_name": "Format date",
+      "connector_key": "datetime_utils",
+      "action_key": "format_date",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "datetime_utils_2",
+      "display_name": "Date to Unix timestamp",
+      "connector_key": "datetime_utils",
+      "action_key": "date_to_unix_timestamp",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "http_1",
+      "display_name": "Send HTTP request",
+      "connector_key": "http",
+      "action_key": "$http_client",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_connection"
+    },
+    {
+      "key": "http_2",
+      "display_name": "HTTP form data request",
+      "connector_key": "http",
+      "action_key": "$http_form",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_connection"
+    },
+    {
+      "key": "http_3",
+      "display_name": "Upload file",
+      "connector_key": "http",
+      "action_key": "$http_upload",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": "config.http_connection"
+    },
+    {
+      "key": "invoke_subflow_1",
+      "display_name": "Invoke callable task",
+      "connector_key": "invoke_subflow",
+      "action_key": "invoke_subflow",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "loop_1",
+      "display_name": "Loop over items",
+      "connector_key": "loop",
+      "action_key": "for_each",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "loop_2",
+      "display_name": "Loop N times",
+      "connector_key": "loop",
+      "action_key": "loop_n_times",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "loop_3",
+      "display_name": "Break loop",
+      "connector_key": "loop",
+      "action_key": "break_loop",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "loop_4",
+      "display_name": "Schedule execution",
+      "connector_key": "loop",
+      "action_key": "loop_at_interval",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "return_1",
+      "display_name": "Return value",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "sleep_1",
+      "display_name": "Sleep",
+      "connector_key": "sleep",
+      "action_key": "sleep",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "terminate_1",
+      "display_name": "Terminate with error",
+      "connector_key": "terminate",
+      "action_key": "terminate_with_error",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "trigger",
+      "display_name": "Approval assist",
+      "connector_key": "ai",
+      "action_key": "approval_assist",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_1",
+      "display_name": "Get Request",
+      "connector_key": "zip",
+      "action_key": "get_request",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "request_id": {
+            "control": "ref",
+            "value": "trigger.request_id"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_2",
+      "display_name": "Get Vendor",
+      "connector_key": "zip",
+      "action_key": "get_vendor",
+      "input_config": {
+        "control": "object",
+        "value": {
+          "vendor_id": {
+            "control": "ref",
+            "value": "steps.zip_1.body.vendor_id"
+          }
+        }
+      },
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    }
+  ],
+  "trigger_kind": "APPROVAL_ASSIST",
+  "type": "task_template",
+  "version": 1,
+  "workflow": {
+    "trigger": {
+      "key": "trigger",
+      "branches": null
+    },
+    "steps": [
+      {
+        "key": "zip_1",
+        "branches": null
+      },
+      {
+        "key": "zip_2",
+        "branches": null
+      },
+      {
+        "key": "ai_1",
+        "branches": null
+      },
+      {
+        "key": "ai_2",
+        "branches": null
+      },
+      {
+        "key": "condition_1",
+        "branches": [
+          {
+            "key": "default",
+            "label": "False",
+            "steps": [
+              {
+                "key": "invoke_subflow_1",
+                "branches": null
+              },
+              {
+                "key": "terminate_1",
+                "branches": null
+              }
+            ]
+          },
+          {
+            "key": "true",
+            "label": "True",
+            "steps": [
+              {
+                "key": "loop_1",
+                "branches": [
+                  {
+                    "key": "default",
+                    "label": null,
+                    "steps": [
+                      {
+                        "key": "loop_2",
+                        "branches": [
+                          {
+                            "key": "default",
+                            "label": null,
+                            "steps": [
+                              {
+                                "key": "loop_3",
+                                "branches": null
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "key": "loop_4",
+                        "branches": [
+                          {
+                            "key": "default",
+                            "label": null,
+                            "steps": []
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "key": "sleep_1",
+                "branches": null
+              },
+              {
+                "key": "condition_2",
+                "branches": [
+                  {
+                    "key": "default",
+                    "label": "False",
+                    "steps": [
+                      {
+                        "key": "datetime_utils_1",
+                        "branches": null
+                      },
+                      {
+                        "key": "datetime_utils_2",
+                        "branches": null
+                      }
+                    ]
+                  },
+                  {
+                    "key": "true",
+                    "label": "True",
+                    "steps": [
+                      {
+                        "key": "http_1",
+                        "branches": null
+                      },
+                      {
+                        "key": "http_2",
+                        "branches": null
+                      },
+                      {
+                        "key": "http_3",
+                        "branches": null
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "return_1",
+        "branches": null
+      }
+    ]
+  }
+}
