@@ -26,7 +26,12 @@ const PlanNodeSchema = z.object({
         "Required for compiling the final JSON template. " +
         "Leave undefined for void nodes."
     ),
-    promptOrLogic: z.string(),
+    promptOrLogic: z.string().describe(
+        "DETAILED prompt information or execution logic. This MUST be comprehensive enough " +
+        "for a human to fully understand the node's behavior during review. " +
+        "Do NOT use brief 1-2 word summaries. Include required inputs, validation rules, " +
+        "or exact prompt instructions. You MAY use newlines and bullet points for readability."
+    ),
 });
 
 const PlanEdgeSchema = z.object({

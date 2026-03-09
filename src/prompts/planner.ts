@@ -18,7 +18,8 @@ Rules:
 8. Focus on business logic, prompting logic, and branching intent.
 9. Do not generate buildToolCalls, setCursor instructions, or other builder syntax.
 10. Keep justifications and future enhancements brief and specific.
-11. You MUST generate the planDraft JSON exactly matching this schema:
+11. The "Prompt / Logic" column MUST be highly detailed. It is used for human review. Never use a 1-5 word summary. You must write out the comprehensive instructions or execution logic the node will follow. Do not compress this into a single line; use formatting if it helps readability.
+12. You MUST generate the planDraft JSON exactly matching this schema:
     - agentName (string)
     - purpose (string)
     - outputFilename (string)

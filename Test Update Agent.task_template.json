@@ -1,0 +1,58 @@
+{
+  "config_pages": [],
+  "config_vars": {},
+  "exported_at": "2026-03-09T22:35:43.565Z",
+  "flow_config_pages": [],
+  "flow_config_vars": {},
+  "is_concurrent_job_limit_enabled": true,
+  "is_long_running": false,
+  "name": "Test Update Agent",
+  "steps_data": [
+    {
+      "key": "return_1",
+      "display_name": "Return AI approval output",
+      "connector_key": "return",
+      "action_key": "return_value",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "trigger",
+      "display_name": "AI Approval subtask",
+      "connector_key": "ai",
+      "action_key": "approval_assist",
+      "input_config": null,
+      "branches": null,
+      "error_handling_policy": 1,
+      "connection_var_key": null
+    },
+    {
+      "key": "zip_1",
+      "action_key": "update_approval_node",
+      "connection_var_key": null,
+      "connector_key": "zip",
+      "display_name": "Update approval node",
+      "input_config": null
+    }
+  ],
+  "trigger_kind": "APPROVAL_ASSIST",
+  "type": "task_template",
+  "version": 1,
+  "workflow": {
+    "trigger": {
+      "key": "trigger",
+      "branches": null
+    },
+    "steps": [
+      {
+        "key": "zip_1",
+        "branches": null
+      },
+      {
+        "key": "return_1"
+      }
+    ]
+  }
+}
