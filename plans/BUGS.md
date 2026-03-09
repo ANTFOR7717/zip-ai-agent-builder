@@ -221,7 +221,7 @@ Output agents use freeform descriptive key names like `"get_request"`, `"analyze
 | `"init_items"` | `"mem_2"` | `memory_storage` | `set_value` |
 | `"main_loop"` | `"loop_1"` | `loop` | `loop_n_times` |
 | `"get_current_status"` | `"mem_3"` | `memory_storage` | `get_value` |
-| `"check_status"` | `"cond_1"` | `condition` | `if_condition` |
+| `"check_status"` | `"condition_1"` | `condition` | `if_condition` |
 | `"append_item"` | `"mem_4"` | `memory_storage` | `append_to_list` |
 | `"break_loop"` | `"break_1"` | `loop` | `break_loop` |
 | `"get_items"` | `"mem_5"` | `memory_storage` | `get_value` |

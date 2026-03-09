@@ -55,7 +55,7 @@ export function createZipTools(config: ZipBuilderConfig) {
             description:
                 "Start building a new Zip Agent. MUST be called before any other tool. " +
                 "Resets any previous session. " +
-                "By default, step key names are enforced to follow the type_N convention (ai_1, zip_2, cond_1, etc.). " +
+                "By default, step key names are enforced to follow the type_N convention (ai_1, zip_2, condition_1, etc.). " +
                 "Pass strictKeyNames=false ONLY if the user explicitly requests custom key names.",
             parameters: z.object({
                 name: z.string().describe("Agent display name"),
@@ -251,7 +251,7 @@ export function createZipTools(config: ZipBuilderConfig) {
                 "and setCursor(key, 'default') for the false/else branch. " +
                 "left: bare path 'steps.x.y' uses ref control; ${} syntax uses text control. Both are valid.",
             parameters: z.object({
-                key: z.string().describe("Unique step ID e.g. 'cond_1'"),
+                key: z.string().describe("Unique step ID e.g. 'condition_1'"),
                 name: z.string().describe("Display label"),
                 left: z
                     .string()

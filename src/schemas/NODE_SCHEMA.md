@@ -1,8 +1,8 @@
 # Zip Agent Node Schema
 
-> **Exact transfer source:** `src/schemas/example.task_template.json`
+> **Exact transfer source:** `src/schemas/example.json`
 >
-> This file is a faithful markdown transfer of the authoritative example task template. It preserves the exact top-level fields, exact node instances, exact controls, exact references, exact placeholder `null` values, and exact workflow routing present in the JSON.
+> Each node below has its own dedicated schema table using the exact field format requested, followed by the exact node structure from the authoritative example JSON.
 
 ---
 
@@ -11,226 +11,257 @@
 - `type`: `task_template`
 - `trigger_kind`: `APPROVAL_ASSIST`
 - `version`: `1`
-- `exported_at`: `2026-03-08T11:11:05.638Z`
-- `name`: `MSA SOW Reader Agent imported at 3/7/2026, 5:58:33 PM`
-- total `steps_data` nodes: `8`
+- `exported_at`: `2026-03-09T01:34:52.499Z`
+- `name`: `New PoC Agent`
+- total `steps_data` nodes: `20`
 
-## Exact Top-Level Fields
+## Exact Top-Level JSON Blocks
 
-| Field | Exact Value / Shape |
-|---|---|
-| `config_pages` | `[]` |
-| `config_vars` | `{}` |
-| `exported_at` | `2026-03-08T11:11:05.638Z` |
-| `flow_config_pages` | `[]` |
-| `flow_config_vars` | `{}` |
-| `is_concurrent_job_limit_enabled` | `true` |
-| `is_long_running` | `false` |
-| `name` | `MSA SOW Reader Agent imported at 3/7/2026, 5:58:33 PM` |
-| `steps_data` | array of 8 step objects |
-| `trigger_kind` | `APPROVAL_ASSIST` |
-| `type` | `task_template` |
-| `version` | `1` |
-| `workflow` | trigger object + ordered step routing |
+### `config_pages`
+```json
+[
+  {
+    "title": "Connections",
+    "description": "",
+    "items": [
+      {
+        "kind": "config_var",
+        "config_var_key": "http_connection"
+      }
+    ]
+  },
+  {
+    "title": "Setup",
+    "description": "",
+    "items": []
+  }
+]
+```
 
-## Exact `steps_data` Storage Order
-
-1. `ai_1`
-2. `ai_2`
-3. `ai_3`
-4. `cond_1`
-5. `return_1`
-6. `trigger`
-7. `zip_1`
-8. `zip_2`
-
-## Exact Connector / Action Inventory
-
-| Connector | Action | Nodes |
-|---|---|---|
-| `ai` | `generic_ai` | `ai_1`, `ai_2`, `ai_3` |
-| `ai` | `approval_assist` | `trigger` |
-| `zip` | `get_request` | `zip_1` |
-| `zip` | `get_vendor` | `zip_2` |
-| `condition` | `if_condition` | `cond_1` |
-| `return` | `return_value` | `return_1` |
-
-## Exact Controls Present In The Example
-
-Only these controls appear anywhere in the authoritative JSON:
-
-- `object`
-- `array`
-- `text`
-- `ref`
-- `picklist`
-- `multipicklist`
-- `boolean`
-
-Literal `null` values also appear directly as values, especially inside `structured_schema` placeholder entries and in `input_config` for the trigger node.
-
----
-
-## Exact Action Schemas Transferred From The Example
-
-### `ai / generic_ai`
-
-Exact `input_config.value` fields observed:
-
-| Field | Control | Exact observed value shape |
-|---|---|---|
-| `user_prompt` | `text` | long instruction string |
-| `tools` | `multipicklist` | `["document", "zip_data"]` or `["document"]` |
-| `output_format` | `picklist` | `structured` |
-| `structured_schema` | `array` | array of `{"control":"object","value":...}` entries |
-
-Exact populated `structured_schema` entry seen in `ai_1`:
-
+### `config_vars`
 ```json
 {
-  "control": "object",
-  "value": {
-    "key": {
-      "control": "text",
-      "value": "msa_found"
-    },
-    "description": {
-      "control": "text",
-      "value": "Whether an MSA document was found"
-    },
-    "type": {
-      "control": "picklist",
-      "value": "boolean"
+  "http_connection": {
+    "key": "http_connection",
+    "title": "Http connection",
+    "description": null,
+    "required": true,
+    "kind": "connection",
+    "connector": {
+      "key": "http"
     }
   }
 }
 ```
 
-Exact placeholder shapes also present in `structured_schema`:
-
+### `flow_config_pages`
 ```json
-{
-  "control": "object",
-  "value": null
-}
+[]
 ```
 
-Exact observed `structured_schema` array lengths by node:
+### `flow_config_vars`
+```json
+{}
+```
 
-| Node | Array length | Populated entries | Null placeholder entries |
-|---|---:|---:|---:|
-| `ai_1` | 5 | 1 | 4 |
-| `ai_2` | 8 | 0 | 8 |
-| `ai_3` | 8 | 0 | 8 |
-
-### `ai / approval_assist`
-
-Exact shape observed:
-
-- `key`: `trigger`
-- `display_name`: `Approval assist`
-- `input_config`: `null`
-- `branches`: `null`
-- `error_handling_policy`: `1`
-- `connection_var_key`: `null`
-
-### `zip / get_request`
-
-Exact `input_config.value` field:
-
-| Field | Control | Exact value |
-|---|---|---|
-| `request_id` | `ref` | `trigger.request_id` |
-
-### `zip / get_vendor`
-
-Exact `input_config.value` field:
-
-| Field | Control | Exact value |
-|---|---|---|
-| `vendor_id` | `ref` | `steps.zip_1.body.vendor_id` |
-
-### `condition / if_condition`
-
-Exact `input_config.value` field:
-
-| Field | Control | Exact value shape |
-|---|---|---|
-| `conditions` | `array` | array containing one condition object |
-
-Exact condition object shape:
-
+### `workflow`
 ```json
 {
-  "control": "object",
-  "value": {
-    "left_value": {
-      "control": "ref",
-      "value": "steps.ai_1.output.msa_found"
+  "trigger": {
+    "key": "trigger",
+    "branches": null
+  },
+  "steps": [
+    {
+      "key": "zip_1",
+      "branches": null
     },
-    "operator": {
-      "control": "picklist",
-      "value": "equals"
+    {
+      "key": "zip_2",
+      "branches": null
     },
-    "right_value": {
-      "control": "boolean",
-      "value": true
+    {
+      "key": "ai_1",
+      "branches": null
+    },
+    {
+      "key": "ai_2",
+      "branches": null
+    },
+    {
+      "key": "condition_1",
+      "branches": [
+        {
+          "key": "default",
+          "label": "False",
+          "steps": [
+            {
+              "key": "invoke_subflow_1",
+              "branches": null
+            },
+            {
+              "key": "terminate_1",
+              "branches": null
+            }
+          ]
+        },
+        {
+          "key": "true",
+          "label": "True",
+          "steps": [
+            {
+              "key": "loop_1",
+              "branches": [
+                {
+                  "key": "default",
+                  "label": null,
+                  "steps": [
+                    {
+                      "key": "loop_2",
+                      "branches": [
+                        {
+                          "key": "default",
+                          "label": null,
+                          "steps": [
+                            {
+                              "key": "loop_3",
+                              "branches": null
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "key": "loop_4",
+                      "branches": [
+                        {
+                          "key": "default",
+                          "label": null,
+                          "steps": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "sleep_1",
+              "branches": null
+            },
+            {
+              "key": "condition_2",
+              "branches": [
+                {
+                  "key": "default",
+                  "label": "False",
+                  "steps": [
+                    {
+                      "key": "datetime_utils_1",
+                      "branches": null
+                    },
+                    {
+                      "key": "datetime_utils_2",
+                      "branches": null
+                    }
+                  ]
+                },
+                {
+                  "key": "true",
+                  "label": "True",
+                  "steps": [
+                    {
+                      "key": "http_1",
+                      "branches": null
+                    },
+                    {
+                      "key": "http_2",
+                      "branches": null
+                    },
+                    {
+                      "key": "http_3",
+                      "branches": null
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "return_1",
+      "branches": null
     }
-  }
+  ]
 }
 ```
 
-### `return / return_value`
+## Node Tables
 
-Exact `input_config.value` field:
+### Node `ai_1` — `ai / generic_ai`
 
-| Field | Control | Exact value |
-|---|---|---|
-| `value` | `ref` | `steps.ai_3.output` |
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `ai_1` | Yes |
+| `display_name` | `string` | `Generic AI` | Yes |
+| `connector_key` | `string` | `ai` | Yes |
+| `action_key` | `string` | `generic_ai` | Yes |
+| `input_config` | `object` | wrapper: control=`object`, value keys=`tools`, `output_format`, `include_citations`, `user_prompt` | Yes |
+| `input_config.control` | `string` | `object` | Yes |
+| `input_config.value` | `object` | object keys=`tools`, `output_format`, `include_citations`, `user_prompt` | Yes |
+| `input_config.value.tools` | `multipicklist` | wrapper: control=`multipicklist`, value=`["web_search_preview","document","zip_data","ai_company_context"]` | Yes |
+| `input_config.value.tools.control` | `string` | `multipicklist` | Yes |
+| `input_config.value.tools.value` | `array` | `["web_search_preview","document","zip_data","ai_company_context"]` | Yes |
+| `input_config.value.tools.value[0]` | `string` | `web_search_preview` | Yes |
+| `input_config.value.tools.value[1]` | `string` | `document` | Yes |
+| `input_config.value.tools.value[2]` | `string` | `zip_data` | Yes |
+| `input_config.value.tools.value[3]` | `string` | `ai_company_context` | Yes |
+| `input_config.value.output_format` | `picklist` | wrapper: control=`picklist`, value=`raw` | Yes |
+| `input_config.value.output_format.control` | `string` | `picklist` | Yes |
+| `input_config.value.output_format.value` | `string` | `raw` | Yes |
+| `input_config.value.include_citations` | `boolean` | wrapper: control=`boolean`, value=`false` | Yes |
+| `input_config.value.include_citations.control` | `string` | `boolean` | Yes |
+| `input_config.value.include_citations.value` | `boolean` | `false` | Yes |
+| `input_config.value.user_prompt` | `text` | wrapper: control=`text`, value=`example` | Yes |
+| `input_config.value.user_prompt.control` | `string` | `text` | Yes |
+| `input_config.value.user_prompt.value` | `string` | `example` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
 
----
-
-## Exact Node Transfer (`steps_data` Objects)
-
-### `ai_1` — `ai / generic_ai`
+#### Exact node structure
 
 ```json
 {
   "key": "ai_1",
-  "display_name": "Identify Documents",
+  "display_name": "Generic AI",
   "connector_key": "ai",
   "action_key": "generic_ai",
   "input_config": {
     "control": "object",
     "value": {
-      "user_prompt": {
-        "control": "text",
-        "value": "Analyze the documents attached to this request. Identify:\n1. MSA (Master Service Agreement) - look for terms like \"Master Service Agreement\", \"MSA\", \"Service Agreement\"\n2. SOW (Statement of Work) - look for \"Statement of Work\", \"SOW\", \"Scope of Work\", \"Project Summary\"\n\nReturn a structured response with:\n- msa_found: boolean - whether an MSA document was found\n- sow_found: boolean - whether an SOW document was found  \n- msa_document_id: string | null - the document ID of the MSA if found\n- sow_document_id: string | null - the document ID of the SOW if found\n- summary: string - brief description of what was found"
-      },
       "tools": {
         "control": "multipicklist",
-        "value": ["document", "zip_data"]
+        "value": [
+          "web_search_preview",
+          "document",
+          "zip_data",
+          "ai_company_context"
+        ]
       },
       "output_format": {
         "control": "picklist",
-        "value": "structured"
+        "value": "raw"
       },
-      "structured_schema": {
-        "control": "array",
-        "value": [
-          {
-            "control": "object",
-            "value": {
-              "key": { "control": "text", "value": "msa_found" },
-              "description": { "control": "text", "value": "Whether an MSA document was found" },
-              "type": { "control": "picklist", "value": "boolean" }
-            }
-          },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null }
-        ]
+      "include_citations": {
+        "control": "boolean",
+        "value": false
+      },
+      "user_prompt": {
+        "control": "text",
+        "value": "example"
       }
     }
   },
@@ -240,41 +271,55 @@ Exact `input_config.value` field:
 }
 ```
 
-### `ai_2` — `ai / generic_ai`
+### Node `ai_2` — `ai / generic_ai`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `ai_2` | Yes |
+| `display_name` | `string` | `Generic AI` | Yes |
+| `connector_key` | `string` | `ai` | Yes |
+| `action_key` | `string` | `generic_ai` | Yes |
+| `input_config` | `object` | wrapper: control=`object`, value keys=`tools`, `include_citations`, `user_prompt` | Yes |
+| `input_config.control` | `string` | `object` | Yes |
+| `input_config.value` | `object` | object keys=`tools`, `include_citations`, `user_prompt` | Yes |
+| `input_config.value.tools` | `multipicklist` | wrapper: control=`multipicklist`, value=`["web_search_preview"]` | Yes |
+| `input_config.value.tools.control` | `string` | `multipicklist` | Yes |
+| `input_config.value.tools.value` | `array` | `["web_search_preview"]` | Yes |
+| `input_config.value.tools.value[0]` | `string` | `web_search_preview` | Yes |
+| `input_config.value.include_citations` | `boolean` | wrapper: control=`boolean`, value=`true` | Yes |
+| `input_config.value.include_citations.control` | `string` | `boolean` | Yes |
+| `input_config.value.include_citations.value` | `boolean` | `true` | Yes |
+| `input_config.value.user_prompt` | `ref` | wrapper: control=`ref`, value=`steps.ai_1.response` | Yes |
+| `input_config.value.user_prompt.control` | `string` | `ref` | Yes |
+| `input_config.value.user_prompt.value` | `string` | `steps.ai_1.response` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
 
 ```json
 {
   "key": "ai_2",
-  "display_name": "Extract MSA Terms",
+  "display_name": "Generic AI",
   "connector_key": "ai",
   "action_key": "generic_ai",
   "input_config": {
     "control": "object",
     "value": {
-      "user_prompt": {
-        "control": "text",
-        "value": "Extract the key terms from the Master Service Agreement (MSA) document.\n\nAnalyze the MSA and extract:\n- parties: The parties involved in the agreement\n- effective_date: When the agreement starts\n- term_length: Duration of the agreement\n- termination_clause: How the agreement can be terminated\n- payment_terms: Payment terms and conditions\n- liability_cap: Maximum liability amounts\n- governing_law: Which state's laws govern\n- any_other_key_terms: Any other significant terms\n\nReturn a structured response with all extracted terms."
-      },
       "tools": {
         "control": "multipicklist",
-        "value": ["document"]
-      },
-      "output_format": {
-        "control": "picklist",
-        "value": "structured"
-      },
-      "structured_schema": {
-        "control": "array",
         "value": [
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null }
+          "web_search_preview"
         ]
+      },
+      "include_citations": {
+        "control": "boolean",
+        "value": true
+      },
+      "user_prompt": {
+        "control": "ref",
+        "value": "steps.ai_1.response"
       }
     }
   },
@@ -284,106 +329,440 @@ Exact `input_config.value` field:
 }
 ```
 
-### `ai_3` — `ai / generic_ai`
+### Node `condition_1` — `condition / if_condition`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `condition_1` | Yes |
+| `display_name` | `string` | `If condition` | Yes |
+| `connector_key` | `string` | `condition` | Yes |
+| `action_key` | `string` | `if_condition` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
 
 ```json
 {
-  "key": "ai_3",
-  "display_name": "Extract SOW Details",
-  "connector_key": "ai",
-  "action_key": "generic_ai",
-  "input_config": {
-    "control": "object",
-    "value": {
-      "user_prompt": {
-        "control": "text",
-        "value": "Extract the details from the Statement of Work (SOW) document.\n\nAnalyze the SOW and extract:\n- project_name: Name of the project\n- project_description: Description of the work to be done\n- deliverables: What will be delivered\n- timeline: Project timeline and milestones\n- budget: Budget or cost information\n- resources: Resources required\n- success_criteria: How success will be measured\n- any_special_terms: Any special terms or conditions\n\nReturn a structured response with all extracted details."
-      },
-      "tools": {
-        "control": "multipicklist",
-        "value": ["document"]
-      },
-      "output_format": {
-        "control": "picklist",
-        "value": "structured"
-      },
-      "structured_schema": {
-        "control": "array",
-        "value": [
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null },
-          { "control": "object", "value": null }
-        ]
-      }
-    }
-  },
-  "branches": null,
-  "error_handling_policy": 1,
-  "connection_var_key": null
-}
-```
-
-### `cond_1` — `condition / if_condition`
-
-```json
-{
-  "key": "cond_1",
-  "display_name": "Check MSA Exists",
+  "key": "condition_1",
+  "display_name": "If condition",
   "connector_key": "condition",
   "action_key": "if_condition",
-  "input_config": {
-    "control": "object",
-    "value": {
-      "conditions": {
-        "control": "array",
-        "value": [
-          {
-            "control": "object",
-            "value": {
-              "left_value": { "control": "ref", "value": "steps.ai_1.output.msa_found" },
-              "operator": { "control": "picklist", "value": "equals" },
-              "right_value": { "control": "boolean", "value": true }
-            }
-          }
-        ]
-      }
-    }
-  },
+  "input_config": null,
   "branches": null,
   "error_handling_policy": 1,
   "connection_var_key": null
 }
 ```
 
-### `return_1` — `return / return_value`
+### Node `condition_2` — `condition / if_condition`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `condition_2` | Yes |
+| `display_name` | `string` | `If condition` | Yes |
+| `connector_key` | `string` | `condition` | Yes |
+| `action_key` | `string` | `if_condition` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "condition_2",
+  "display_name": "If condition",
+  "connector_key": "condition",
+  "action_key": "if_condition",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `datetime_utils_1` — `datetime_utils / format_date`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `datetime_utils_1` | Yes |
+| `display_name` | `string` | `Format date` | Yes |
+| `connector_key` | `string` | `datetime_utils` | Yes |
+| `action_key` | `string` | `format_date` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "datetime_utils_1",
+  "display_name": "Format date",
+  "connector_key": "datetime_utils",
+  "action_key": "format_date",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `datetime_utils_2` — `datetime_utils / date_to_unix_timestamp`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `datetime_utils_2` | Yes |
+| `display_name` | `string` | `Date to Unix timestamp` | Yes |
+| `connector_key` | `string` | `datetime_utils` | Yes |
+| `action_key` | `string` | `date_to_unix_timestamp` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "datetime_utils_2",
+  "display_name": "Date to Unix timestamp",
+  "connector_key": "datetime_utils",
+  "action_key": "date_to_unix_timestamp",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `http_1` — `http / $http_client`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `http_1` | Yes |
+| `display_name` | `string` | `Send HTTP request` | Yes |
+| `connector_key` | `string` | `http` | Yes |
+| `action_key` | `string` | `$http_client` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `string` | `config.http_connection` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "http_1",
+  "display_name": "Send HTTP request",
+  "connector_key": "http",
+  "action_key": "$http_client",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": "config.http_connection"
+}
+```
+
+### Node `http_2` — `http / $http_form`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `http_2` | Yes |
+| `display_name` | `string` | `HTTP form data request` | Yes |
+| `connector_key` | `string` | `http` | Yes |
+| `action_key` | `string` | `$http_form` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `string` | `config.http_connection` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "http_2",
+  "display_name": "HTTP form data request",
+  "connector_key": "http",
+  "action_key": "$http_form",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": "config.http_connection"
+}
+```
+
+### Node `http_3` — `http / $http_upload`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `http_3` | Yes |
+| `display_name` | `string` | `Upload file` | Yes |
+| `connector_key` | `string` | `http` | Yes |
+| `action_key` | `string` | `$http_upload` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `string` | `config.http_connection` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "http_3",
+  "display_name": "Upload file",
+  "connector_key": "http",
+  "action_key": "$http_upload",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": "config.http_connection"
+}
+```
+
+### Node `invoke_subflow_1` — `invoke_subflow / invoke_subflow`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `invoke_subflow_1` | Yes |
+| `display_name` | `string` | `Invoke callable task` | Yes |
+| `connector_key` | `string` | `invoke_subflow` | Yes |
+| `action_key` | `string` | `invoke_subflow` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "invoke_subflow_1",
+  "display_name": "Invoke callable task",
+  "connector_key": "invoke_subflow",
+  "action_key": "invoke_subflow",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `loop_1` — `loop / for_each`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `loop_1` | Yes |
+| `display_name` | `string` | `Loop over items` | Yes |
+| `connector_key` | `string` | `loop` | Yes |
+| `action_key` | `string` | `for_each` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "loop_1",
+  "display_name": "Loop over items",
+  "connector_key": "loop",
+  "action_key": "for_each",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `loop_2` — `loop / loop_n_times`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `loop_2` | Yes |
+| `display_name` | `string` | `Loop N times` | Yes |
+| `connector_key` | `string` | `loop` | Yes |
+| `action_key` | `string` | `loop_n_times` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "loop_2",
+  "display_name": "Loop N times",
+  "connector_key": "loop",
+  "action_key": "loop_n_times",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `loop_3` — `loop / break_loop`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `loop_3` | Yes |
+| `display_name` | `string` | `Break loop` | Yes |
+| `connector_key` | `string` | `loop` | Yes |
+| `action_key` | `string` | `break_loop` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "loop_3",
+  "display_name": "Break loop",
+  "connector_key": "loop",
+  "action_key": "break_loop",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `loop_4` — `loop / loop_at_interval`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `loop_4` | Yes |
+| `display_name` | `string` | `Schedule execution` | Yes |
+| `connector_key` | `string` | `loop` | Yes |
+| `action_key` | `string` | `loop_at_interval` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "loop_4",
+  "display_name": "Schedule execution",
+  "connector_key": "loop",
+  "action_key": "loop_at_interval",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `return_1` — `return / return_value`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `return_1` | Yes |
+| `display_name` | `string` | `Return value` | Yes |
+| `connector_key` | `string` | `return` | Yes |
+| `action_key` | `string` | `return_value` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
 
 ```json
 {
   "key": "return_1",
-  "display_name": "Return Report",
+  "display_name": "Return value",
   "connector_key": "return",
   "action_key": "return_value",
-  "input_config": {
-    "control": "object",
-    "value": {
-      "value": {
-        "control": "ref",
-        "value": "steps.ai_3.output"
-      }
-    }
-  },
+  "input_config": null,
   "branches": null,
   "error_handling_policy": 1,
   "connection_var_key": null
 }
 ```
 
-### `trigger` — `ai / approval_assist`
+### Node `sleep_1` — `sleep / sleep`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `sleep_1` | Yes |
+| `display_name` | `string` | `Sleep` | Yes |
+| `connector_key` | `string` | `sleep` | Yes |
+| `action_key` | `string` | `sleep` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "sleep_1",
+  "display_name": "Sleep",
+  "connector_key": "sleep",
+  "action_key": "sleep",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `terminate_1` — `terminate / terminate_with_error`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `terminate_1` | Yes |
+| `display_name` | `string` | `Terminate with error` | Yes |
+| `connector_key` | `string` | `terminate` | Yes |
+| `action_key` | `string` | `terminate_with_error` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
+
+```json
+{
+  "key": "terminate_1",
+  "display_name": "Terminate with error",
+  "connector_key": "terminate",
+  "action_key": "terminate_with_error",
+  "input_config": null,
+  "branches": null,
+  "error_handling_policy": 1,
+  "connection_var_key": null
+}
+```
+
+### Node `trigger` — `ai / approval_assist`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `trigger` | Yes |
+| `display_name` | `string` | `Approval assist` | Yes |
+| `connector_key` | `string` | `ai` | Yes |
+| `action_key` | `string` | `approval_assist` | Yes |
+| `input_config` | `null` | `null` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
 
 ```json
 {
@@ -398,7 +777,25 @@ Exact `input_config.value` field:
 }
 ```
 
-### `zip_1` — `zip / get_request`
+### Node `zip_1` — `zip / get_request`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `zip_1` | Yes |
+| `display_name` | `string` | `Get Request` | Yes |
+| `connector_key` | `string` | `zip` | Yes |
+| `action_key` | `string` | `get_request` | Yes |
+| `input_config` | `object` | wrapper: control=`object`, value keys=`request_id` | Yes |
+| `input_config.control` | `string` | `object` | Yes |
+| `input_config.value` | `object` | object keys=`request_id` | Yes |
+| `input_config.value.request_id` | `ref` | wrapper: control=`ref`, value=`trigger.request_id` | Yes |
+| `input_config.value.request_id.control` | `string` | `ref` | Yes |
+| `input_config.value.request_id.value` | `string` | `trigger.request_id` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
 
 ```json
 {
@@ -421,7 +818,25 @@ Exact `input_config.value` field:
 }
 ```
 
-### `zip_2` — `zip / get_vendor`
+### Node `zip_2` — `zip / get_vendor`
+
+| Field | Control Type | Valid Values | Required |
+|---|---|---|---|
+| `key` | `string` | `zip_2` | Yes |
+| `display_name` | `string` | `Get Vendor` | Yes |
+| `connector_key` | `string` | `zip` | Yes |
+| `action_key` | `string` | `get_vendor` | Yes |
+| `input_config` | `object` | wrapper: control=`object`, value keys=`vendor_id` | Yes |
+| `input_config.control` | `string` | `object` | Yes |
+| `input_config.value` | `object` | object keys=`vendor_id` | Yes |
+| `input_config.value.vendor_id` | `ref` | wrapper: control=`ref`, value=`steps.zip_1.body.vendor_id` | Yes |
+| `input_config.value.vendor_id.control` | `string` | `ref` | Yes |
+| `input_config.value.vendor_id.value` | `string` | `steps.zip_1.body.vendor_id` | Yes |
+| `branches` | `null` | `null` | Yes |
+| `error_handling_policy` | `number` | `1` | Yes |
+| `connection_var_key` | `null` | `null` | Yes |
+
+#### Exact node structure
 
 ```json
 {
@@ -444,83 +859,12 @@ Exact `input_config.value` field:
 }
 ```
 
----
-
-## Exact Workflow Transfer
-
-Execution order is defined by `workflow`, not by `steps_data` order.
-
-```json
-{
-  "trigger": {
-    "key": "trigger",
-    "branches": null
-  },
-  "steps": [
-    {
-      "key": "zip_1",
-      "branches": null
-    },
-    {
-      "key": "zip_2",
-      "branches": null
-    },
-    {
-      "key": "ai_1",
-      "branches": null
-    },
-    {
-      "key": "cond_1",
-      "branches": [
-        {
-          "key": "true",
-          "label": "True",
-          "steps": [
-            {
-              "key": "ai_2",
-              "branches": null
-            }
-          ]
-        },
-        {
-          "key": "default",
-          "label": "False",
-          "steps": [
-            {
-              "key": "ai_3",
-              "branches": null
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "key": "return_1",
-      "branches": null
-    }
-  ]
-}
-```
-
-## Exact Routing Notes Transferred From The Example
-
-- trigger node key: `trigger`
-- workflow starts with `zip_1`
-- `zip_1` feeds `zip_2`
-- `zip_2` feeds `ai_1`
-- `ai_1` feeds `cond_1`
-- `cond_1` has two exact branches:
-  - branch key `true`, label `True`, steps `[ai_2]`
-  - branch key `default`, label `False`, steps `[ai_3]`
-- after the condition branch, workflow continues to `return_1`
-
 ## Exact Reference Strings Present In The Example
 
+- `steps.ai_1.response`
 - `trigger.request_id`
 - `steps.zip_1.body.vendor_id`
-- `steps.ai_1.output.msa_found`
-- `steps.ai_3.output`
 
 ## Exact Accuracy Boundary
 
-This markdown intentionally transfers only what exists in `src/schemas/example.task_template.json`. If a connector, action, field, control, picklist value, schema entry, or branch pattern is not present in that file, it is not claimed here.
+This markdown intentionally transfers only what exists in `src/schemas/example.json`.

@@ -25,7 +25,7 @@ export interface ConfigVarDef {
 
 // ── Key Naming Enforcement ────────────────────────────────────────────────────
 // Maps every production action_key to its required step key prefix.
-// Convention: type_N (e.g. ai_1, zip_2, cond_1). Trigger is always exactly "trigger".
+// Convention: type_N (e.g. ai_1, zip_2, condition_1). Trigger is always exactly "trigger".
 // CITED: All 7 Valid-Agents follow this convention without exception.
 //
 // Toggle off via new AgentBuilder(name, { strictKeyNames: false }) for custom key names.
@@ -43,7 +43,7 @@ const KEY_PREFIX_MAP: Record<string, { prefix: string; example: string }> = {
     "$http_client": { prefix: "http", example: "http_1" },
 
     // Condition connector
-    "if_condition": { prefix: "cond", example: "cond_1" },
+    "if_condition": { prefix: "condition", example: "condition_1" },
 
     // Return connector
     "return_value": { prefix: "return", example: "return_1" },
@@ -67,7 +67,7 @@ const KEY_PREFIX_MAP: Record<string, { prefix: string; example: string }> = {
 export interface AgentBuilderOptions {
     /**
      * When true (default), enforces the production type_N step key naming convention.
-     * e.g. ai_1, zip_1, cond_1, mem_1, loop_1, return_1 …
+     * e.g. ai_1, zip_1, condition_1, mem_1, loop_1, return_1 …
      *
      * Set to false to allow arbitrary step key names (useful for migration or custom workflows).
      */

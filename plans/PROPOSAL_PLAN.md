@@ -626,7 +626,7 @@ export function createZipTools(config: ZipBuilderConfig) {
       name: "addConditionStep",
       description: "Adds an if_condition node. left must be a bare step path (no ${}). right can be boolean, number, string, or null.",
       parameters: z.object({
-        key: z.string().describe("Unique step ID e.g. 'cond_1'"),
+        key: z.string().describe("Unique step ID e.g. 'condition_1'"),
         name: z.string().describe("Display label"),
         left: z.string().describe("Left operand — always a bare step ref like 'steps.ai_1.response.found'"),
         op: z.enum(["equals", "not_equals"]).describe("Comparison operator"),
@@ -853,9 +853,9 @@ export function createZipTools(config: ZipBuilderConfig) {
        prompt="Does ${steps.zip_1.id} have an MSA, SOW or Order Form?",
        opts={ tools: ["document"], outputFormat: "structured",
               structuredSchema: [{ key:"found", type:"boolean", description:"..." }] })
- 6. addConditionStep(key="cond_1", name="Doc found?",
+ 6. addConditionStep(key="condition_1", name="Doc found?",
        left="steps.ai_1.response.found", op="equals", right=true)
- 7. setCursor(parentId="cond_1", branch="true")
+ 7. setCursor(parentId="condition_1", branch="true")
  8. addAiStep(key="ai_2", name="Extract contract",
        prompt="Extract terms from ${steps.zip_1.id}.",
        opts={ tools: ["document"], model: "auto", outputFormat: "structured",
@@ -880,7 +880,7 @@ export function createZipTools(config: ZipBuilderConfig) {
        vars=[{ key:"input", valueRef:"steps.ai_2.response" }])
 20. addHttpStep(key="http_1", name="Post comment", url="/comments", method="POST",
        bodyStr='{ "data": { "text": "${steps.jinja_1.result}" } }')
-21. setCursor(parentId="cond_1", branch="default")
+21. setCursor(parentId="condition_1", branch="default")
 22. addAiStep(key="ai_3", name="No doc message",
        prompt="Summary banner\nRed\nTitle: No contract found",
        opts={ outputFormat: "markdown" })
@@ -1569,7 +1569,7 @@ TypeScript does not support duplicate method declarations without function overl
 - The `WorkflowNode` uses `workflowBranches`, not `step.branches`
 
 **Justification:**
-Pass 4 audit confirmed that `steps_data` entries for both `if_condition` and `loop_n_times` always have `branches: null` at the step level. However the workflow AST entries for the same steps always have pre-initialized branch arrays. If `addStep()` copies `step.branches` (null) into the `WorkflowNode`, then any subsequent `setCursor(parentId="cond_1", branch="true")` call will attempt to find a node with key `"cond_1"` that has branches — but it will have `null` — and `injectIntoBranch()` will return `false`, causing the `AST Error: Parent not found` throw for every single branching operation.
+Pass 4 audit confirmed that `steps_data` entries for both `if_condition` and `loop_n_times` always have `branches: null` at the step level. However the workflow AST entries for the same steps always have pre-initialized branch arrays. If `addStep()` copies `step.branches` (null) into the `WorkflowNode`, then any subsequent `setCursor(parentId="condition_1", branch="true")` call will attempt to find a node with key `"condition_1"` that has branches — but it will have `null` — and `injectIntoBranch()` will return `false`, causing the `AST Error: Parent not found` throw for every single branching operation.
 
 **Evidence:**
 - `Intake Validation Agent V2.task_template.json` L369: `if_condition` step: `"branches": null`

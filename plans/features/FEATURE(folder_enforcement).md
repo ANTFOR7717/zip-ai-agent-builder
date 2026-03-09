@@ -208,7 +208,7 @@ console.log("\n--- Agent Summary ---");
 console.log(`Name: ${compiled.name}`);
 console.log(`Steps: ${compiled.steps_data.length}`);
 console.log("Workflow:");
-console.log("  trigger → zip_1 → zip_2 → ai_1 → cond_1");
+console.log("  trigger → zip_1 → zip_2 → ai_1 → condition_1");
 console.log("                                          ↘ (true) → ai_2");
 console.log("                                          ↘ (default) → ai_3 → return_1");
 return compiled;

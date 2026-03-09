@@ -44,8 +44,8 @@ export function createZipAgentBuilder(rawOptions: Partial<ZipBuilderOptions> = {
             // mastracode auto-injects write_file with no directory enforcement.
             // This override forces .ts build scripts into build-agents/ at the
             // agent tool level before the framework can inject its own version.
-            write_file: {
-                name: "write_file",
+            saveBuildScript: {
+                name: "saveBuildScript",
                 description:
                     "Write a file to disk. TypeScript build scripts MUST use a path " +
                     "starting with 'build-agents/' (e.g. 'build-agents/build-my-agent.ts'). " +
