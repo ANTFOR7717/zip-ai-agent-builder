@@ -5,6 +5,9 @@
 import { createMastraCode } from "mastracode";
 import { MastraTUI } from "mastracode/tui";
 import { Agent } from "@mastra/core/agent";
+import { promises as fs } from "fs";
+import path from "path";
+import { z } from "zod";
 import { parseConfig, ZipBuilderOptions, ZipBuilderConfig } from "./config.js";
 import { createZipTools } from "./tools.js";
 import { createTheme } from "./theme.js";
@@ -37,6 +40,40 @@ export function createZipAgentBuilder(rawOptions: Partial<ZipBuilderOptions> = {
         instructions: ZIP_BUILDER_PROMPT,
         model: config.defaultModelId,
         tools: {
+            // ── Path-guarding write_file override ──────────────────────────
+            // mastracode auto-injects write_file with no directory enforcement.
+            // This override forces .ts build scripts into build-agents/ at the
+            // agent tool level before the framework can inject its own version.
+            write_file: {
+                name: "write_file",
+                description:
+                    "Write a file to disk. TypeScript build scripts MUST use a path " +
+                    "starting with 'build-agents/' (e.g. 'build-agents/build-my-agent.ts'). " +
+                    "Plan files use saveAgentPlan instead.",
+                parameters: z.object({
+                    path: z.string().describe("File path relative to project root"),
+                    content: z.string().describe("File content to write"),
+                }).shape,
+                execute: async ({ path: filePath, content }: { path: string; content: string }) => {
+                    try {
+                        const normalized = filePath.replace(/\\/g, "/");
+                        // Hard-enforce: .ts files must live in build-agents/
+                        const enforced =
+                            normalized.endsWith(".ts") && !normalized.startsWith("build-agents/")
+                                ? `build-agents/${path.basename(normalized)}`
+                                : normalized;
+                        const absolutePath = path.isAbsolute(enforced)
+                            ? enforced
+                            : path.join(process.cwd(), enforced);
+                        await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+                        await fs.writeFile(absolutePath, content, "utf-8");
+                        return { success: true, filepath: absolutePath };
+                    } catch (e) {
+                        return { success: false, error: (e as Error).message };
+                    }
+                },
+            },
+            // ── Builder tools ───────────────────────────────────────────────
             initializeAgent: tools.initializeAgent,
             addApprovalTrigger: tools.addApprovalTrigger,
             addGetRequestStep: tools.addGetRequestStep,

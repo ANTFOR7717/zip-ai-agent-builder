@@ -9,6 +9,7 @@ import { StepBuilder } from "./builders/StepBuilder.js";
 import { AgentBuilder } from "./builders/AgentBuilder.js";
 import { ZipBuilderConfig } from "./config.js";
 import { AgentPlanDraftSchema, normalizePlanFilename, renderAgentPlanMdx } from "./builders/PlanBuilder.js";
+import { buildAndSave } from "./builders/BuildPipeline.js";
 
 // Module-level builder instance — one session = one agent build
 let activeBuilder: AgentBuilder | null = null;
@@ -556,12 +557,11 @@ export function createZipTools(config: ZipBuilderConfig) {
             execute: async ({ filename }: { filename: string }): Promise<ToolResult> => {
                 if (!activeBuilder) return { success: false, error: "Call initializeAgent first" };
                 try {
-                    const json = activeBuilder.compile();
-                    await fs.mkdir(config.outputDir, { recursive: true });
-                    const finalName = filename.endsWith(".json") ? filename : `${filename}.json`;
-                    const filepath = path.join(config.outputDir, finalName);
-                    await fs.writeFile(filepath, JSON.stringify(json, null, 2));
-                    activeBuilder = null; // Reset session after successful save
+                    const filepath = await buildAndSave(activeBuilder, filename, {
+                        planDir: config.planDir,
+                        outputDir: config.outputDir,
+                    });
+                    activeBuilder = null;
                     return { success: true, filepath };
                 } catch (e) {
                     return { success: false, error: (e as Error).message };
